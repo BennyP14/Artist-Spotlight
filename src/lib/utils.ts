@@ -30,9 +30,9 @@ export function statusLabel(status: string): string {
 export function statusColor(status: string): string {
   return (
     {
-      unlistened: 'text-zinc-500 bg-zinc-800',
-      listening: 'text-amber-400 bg-amber-400/10',
-      complete: 'text-emerald-400 bg-emerald-400/10',
-    }[status] ?? 'text-zinc-500 bg-zinc-800'
+      unlistened: 'text-zinc-600 border border-zinc-800 bg-transparent',
+      listening: 'text-amber-400 border border-amber-400/25 bg-amber-400/8',
+      complete: 'text-orange-400 border border-orange-500/25 bg-orange-500/10',
+    }[status] ?? 'text-zinc-600 border border-zinc-800 bg-transparent'
   )
 }

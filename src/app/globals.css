@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #050505;
+  --background: #0c0a08;
+  --accent: #f97316;
 }
 
 html {
@@ -19,12 +20,12 @@ body {
 /* Thin scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: #555; }
+::-webkit-scrollbar-thumb { background: #2a2218; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #3d3020; }
 
 /* Shimmer loading effect */
 .shimmer {
-  background: linear-gradient(90deg, #1a1a1a 25%, #242424 50%, #1a1a1a 75%);
+  background: linear-gradient(90deg, #1a1510 25%, #231d16 50%, #1a1510 75%);
   background-size: 1000px 100%;
   animation: shimmer 1.8s infinite;
 }

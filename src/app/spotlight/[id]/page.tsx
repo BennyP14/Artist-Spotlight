@@ -42,11 +42,11 @@ function SortableRankItem({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        'flex items-center gap-3 p-3 bg-zinc-900 border rounded-xl transition-shadow',
-        isDragging ? 'border-amber-500/50 shadow-xl shadow-black/60 z-10 relative' : 'border-zinc-800'
+        'flex items-center gap-3 p-3 bg-[#110e0b] border rounded-xl transition-shadow',
+        isDragging ? 'border-orange-500/40 shadow-xl shadow-black/60 z-10 relative' : 'border-white/5'
       )}
     >
-      <span className="w-8 text-center text-xl font-bold text-zinc-700 flex-shrink-0">{position}</span>
+      <span className="w-8 text-center text-xl font-bold text-orange-900 flex-shrink-0">{position}</span>
       {album.image_url ? (
         <Image src={album.image_url} alt={album.album_name} width={44} height={44} className="rounded-md flex-shrink-0" />
       ) : (
@@ -174,7 +174,7 @@ function AlbumRow({
 
   const rowContent = (
     <div className={cn(
-      'flex items-center gap-3 py-3 border-b border-zinc-800/50 group bg-[#050505] transition-colors',
+      'flex items-center gap-3 py-3 border-b border-white/5 group bg-[#0c0a08] transition-colors',
       selected && 'bg-red-500/5'
     )}>
       {/* Checkbox (select mode) */}
@@ -199,10 +199,10 @@ function AlbumRow({
           <div className="w-12 h-12 rounded-md bg-zinc-800 flex-shrink-0" />
         )}
         <div className="min-w-0">
-          <p className={cn('font-medium text-white text-sm truncate transition-colors', !selectMode && 'group-hover:text-amber-400')}>
+          <p className={cn('font-medium text-white text-sm truncate transition-colors tracking-tight', !selectMode && 'group-hover:text-orange-400')}>
             {album.album_name}
           </p>
-          <p className="text-xs text-zinc-500">{album.release_year} · {album.total_tracks} tracks</p>
+          <p className="text-xs text-zinc-700 uppercase tracking-widest mt-0.5">{album.release_year} · {album.total_tracks} tracks</p>
         </div>
       </div>
 
@@ -377,15 +377,16 @@ export default function SpotlightPage() {
   return (
     <div className="animate-fade-in">
       {/* Artist hero */}
-      <div className="relative rounded-2xl overflow-hidden mb-6 bg-zinc-900">
+      <div className="relative rounded-2xl overflow-hidden mb-6 bg-[#110e0b] border border-white/5">
         {spotlight.artist_image_url && (
           <div className="absolute inset-0">
             <Image
               src={spotlight.artist_image_url}
               alt={spotlight.artist_name}
               fill
-              className="object-cover object-top opacity-30 blur-sm scale-105"
+              className="object-cover object-top opacity-20 blur-sm scale-105"
             />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#110e0b] via-[#110e0b]/80 to-transparent" />
           </div>
         )}
         <div className="relative flex items-end gap-4 p-6">
@@ -395,21 +396,21 @@ export default function SpotlightPage() {
               alt={spotlight.artist_name}
               width={80}
               height={80}
-              className="rounded-xl shadow-xl flex-shrink-0"
+              className="rounded-xl shadow-2xl shadow-black/60 flex-shrink-0 ring-1 ring-white/10"
             />
           )}
           <div className="min-w-0">
-            <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">Artist Spotlight</p>
-            <h1 className="text-2xl font-bold text-white">{spotlight.artist_name}</h1>
+            <p className="text-xs text-orange-500/80 uppercase tracking-widest font-medium mb-1">Artist Spotlight</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">{spotlight.artist_name}</h1>
             {spotlight.artist_genres.length > 0 && (
-              <p className="text-sm text-zinc-400 capitalize mt-0.5">
+              <p className="text-xs text-zinc-600 uppercase tracking-widest mt-1">
                 {spotlight.artist_genres.slice(0, 3).join(' · ')}
               </p>
             )}
-            <div className="flex items-center gap-4 mt-2 text-sm text-zinc-400">
+            <div className="flex items-center gap-4 mt-2 text-xs text-zinc-600">
               <span>{albums.length} albums</span>
-              {complete > 0 && <span className="text-emerald-400">{complete} complete</span>}
-              {listening > 0 && <span className="text-amber-400">listening now</span>}
+              {complete > 0 && <span className="text-orange-400 font-medium">{complete} complete</span>}
+              {listening > 0 && <span className="text-amber-400 font-medium">listening now</span>}
             </div>
           </div>
 
@@ -418,7 +419,7 @@ export default function SpotlightPage() {
               href={`/api/og/${id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+              className="text-xs bg-white/5 hover:bg-white/10 border border-white/8 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
               title="Download ranking as image"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -431,7 +432,7 @@ export default function SpotlightPage() {
                 const url = `${window.location.origin}/shared/${spotlight.share_token}`
                 navigator.clipboard.writeText(url).then(() => alert('Link copied!'))
               }}
-              className="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+              className="text-xs bg-white/5 hover:bg-white/10 border border-white/8 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -443,14 +444,14 @@ export default function SpotlightPage() {
 
         {/* Progress bar */}
         {albums.length > 0 && (
-          <div className="relative mx-6 mb-3 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="relative mx-6 mb-3 h-px bg-white/5 rounded-full overflow-hidden">
             <div
-              className="absolute left-0 top-0 h-full bg-emerald-500 rounded-full transition-all duration-500"
+              className="absolute left-0 top-0 h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-500"
               style={{ width: `${(complete / albums.length) * 100}%` }}
             />
             {listening > 0 && (
               <div
-                className="absolute top-0 h-full bg-amber-400/50 rounded-full transition-all duration-500"
+                className="absolute top-0 h-full bg-amber-400/40 rounded-full transition-all duration-500"
                 style={{ left: `${(complete / albums.length) * 100}%`, width: `${(listening / albums.length) * 100}%` }}
               />
             )}
@@ -459,43 +460,43 @@ export default function SpotlightPage() {
 
         {/* Stats strip */}
         {albums.length > 0 && (
-          <div className="relative flex items-center gap-5 px-6 pb-4 text-xs text-zinc-500">
+          <div className="relative flex items-center gap-5 px-6 pb-4 text-xs text-zinc-700 uppercase tracking-wider">
             <span>
-              <span className="text-white font-medium">{complete}</span>/{albums.length} albums complete
+              <span className="text-white font-medium normal-case">{complete}</span>/{albums.length} complete
             </span>
             {complete > 0 && (
               <span>
-                ~<span className="text-white font-medium">
+                ~<span className="text-white font-medium normal-case">
                   {Math.round(albums.filter(a => a.status === 'complete').reduce((s, a) => s + a.total_tracks, 0) * 4 / 60)}h
                 </span> listened
               </span>
             )}
             {rankedAlbums.length > 0 && (
               <span>
-                <span className="text-white font-medium">{rankedAlbums.length}</span> ranked
+                <span className="text-white font-medium normal-case">{rankedAlbums.length}</span> ranked
               </span>
             )}
-            <span className="ml-auto text-zinc-700 text-xs">
-              Started {new Date(spotlight.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
+            <span className="ml-auto text-zinc-800 normal-case">
+              {new Date(spotlight.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
             </span>
           </div>
         )}
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-zinc-900 border border-zinc-800 rounded-xl p-1 max-w-xs">
+      <div className="flex gap-1 mb-6 bg-[#110e0b] border border-white/5 rounded-xl p-1 max-w-xs">
         {(['discography', 'ranking'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={cn(
-              'flex-1 text-sm font-medium py-1.5 rounded-lg transition-all capitalize',
-              tab === t ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
+              'flex-1 text-xs font-semibold py-1.5 rounded-lg transition-all uppercase tracking-widest',
+              tab === t ? 'bg-white/8 text-white' : 'text-zinc-700 hover:text-zinc-400'
             )}
           >
             {t}
             {t === 'ranking' && rankedAlbums.length > 0 && (
-              <span className="ml-1.5 text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full">
+              <span className="ml-1.5 text-xs bg-orange-500/15 text-orange-400 px-1.5 py-0.5 rounded">
                 {rankedAlbums.length}
               </span>
             )}
@@ -539,7 +540,7 @@ export default function SpotlightPage() {
 
       {/* Bulk delete bar */}
       {selectMode && selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-zinc-900 border border-zinc-700 rounded-2xl px-5 py-3 shadow-2xl shadow-black/60">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-[#110e0b] border border-white/10 rounded-2xl px-5 py-3 shadow-2xl shadow-black/80">
           <span className="text-sm text-zinc-300">{selectedIds.size} selected</span>
           <button
             onClick={deleteSelected}

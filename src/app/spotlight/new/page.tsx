@@ -19,20 +19,20 @@ function ArtistCard({
     <button
       onClick={() => onSelect(artist)}
       disabled={loading}
-      className="flex items-center gap-3 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-amber-500/50 hover:bg-zinc-800 transition-all text-left w-full disabled:opacity-50 disabled:cursor-wait"
+      className="flex items-center gap-3 p-3 bg-[#110e0b] border border-white/5 rounded-xl hover:border-orange-500/30 hover:bg-[#150f0a] transition-all text-left w-full disabled:opacity-50 disabled:cursor-wait"
     >
-      <div className="w-14 h-14 rounded-lg bg-zinc-700 flex items-center justify-center flex-shrink-0">
-        <svg className="w-6 h-6 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
+      <div className="w-14 h-14 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+        <svg className="w-6 h-6 text-zinc-700" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
         </svg>
       </div>
       <div className="min-w-0">
-        <p className="font-semibold text-white truncate">{artist.artistName}</p>
+        <p className="font-semibold text-white truncate tracking-tight">{artist.artistName}</p>
         {artist.primaryGenreName && (
-          <p className="text-xs text-zinc-500 capitalize truncate">{artist.primaryGenreName}</p>
+          <p className="text-xs text-zinc-600 uppercase tracking-widest truncate mt-0.5">{artist.primaryGenreName}</p>
         )}
       </div>
-      <svg className="w-4 h-4 text-zinc-600 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-4 h-4 text-zinc-700 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
     </button>
@@ -82,7 +82,6 @@ export default function NewSpotlightPage() {
       const { albums } = await artistRes.json() as { albums: ItunesAlbum[] }
       const { url: wikiImageUrl } = await wikiRes.json()
 
-      // Prefer Wikipedia artist photo; fall back to first album artwork
       const artistImageUrl = wikiImageUrl
         ?? (albums[0]?.artworkUrl100 ? hqArtwork(albums[0].artworkUrl100) : null)
 
@@ -123,13 +122,13 @@ export default function NewSpotlightPage() {
   return (
     <div className="max-w-xl mx-auto animate-fade-in">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">New Spotlight</h1>
-        <p className="text-zinc-500 mt-1">Search for an artist to begin your deep-dive</p>
+        <h1 className="text-2xl font-bold tracking-tight">New Spotlight</h1>
+        <p className="text-zinc-600 text-sm mt-1 uppercase tracking-widest">Search for an artist to begin</p>
       </div>
 
       <div className="relative">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-700"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -142,11 +141,11 @@ export default function NewSpotlightPage() {
           onChange={handleInput}
           placeholder="Search artists…"
           autoFocus
-          className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors"
+          className="w-full bg-[#110e0b] border border-white/5 rounded-xl pl-10 pr-4 py-3 text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 transition-colors"
         />
         {searching && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-zinc-600 border-t-amber-400 rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-zinc-800 border-t-orange-400 rounded-full animate-spin" />
           </div>
         )}
       </div>
@@ -159,8 +158,8 @@ export default function NewSpotlightPage() {
 
       {creating && (
         <div className="mt-8 text-center py-12">
-          <div className="w-10 h-10 border-2 border-zinc-700 border-t-amber-400 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-400">Loading {creatingName}&apos;s discography…</p>
+          <div className="w-10 h-10 border-2 border-white/5 border-t-orange-400 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-zinc-600 text-sm uppercase tracking-widest">Loading {creatingName}&apos;s discography…</p>
         </div>
       )}
 
@@ -173,7 +172,7 @@ export default function NewSpotlightPage() {
       )}
 
       {!creating && !searching && query.length >= 2 && artists.length === 0 && (
-        <p className="mt-6 text-center text-zinc-600 text-sm">No artists found for &ldquo;{query}&rdquo;</p>
+        <p className="mt-6 text-center text-zinc-700 text-sm uppercase tracking-widest">No artists found for &ldquo;{query}&rdquo;</p>
       )}
     </div>
   )
