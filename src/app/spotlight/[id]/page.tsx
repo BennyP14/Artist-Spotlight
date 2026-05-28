@@ -21,9 +21,11 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { getSpotlight, updateAlbumStatus, updateAlbumRanks, removeAlbumFromSpotlight, supabase } from '@/lib/supabase'
+import { getSpotlight, updateAlbumStatus, updateAlbumRanks, removeAlbumFromSpotlight, logActivity, supabase } from '@/lib/supabase'
 import type { SpotlightWithAlbums, SpotlightAlbum } from '@/types'
 import { cn, statusColor, statusLabel, appleMusicSearchUrl } from '@/lib/utils'
+import Reactions from '@/components/Reactions'
+import Comments from '@/components/Comments'
 
 // ─── Sortable ranking item ────────────────────────────────────────────────────
 function SortableRankItem({
@@ -169,6 +171,9 @@ function AlbumRow({
     setUpdating(true)
     await updateAlbumStatus(album.id, next)
     onStatusChange(album.id, next)
+    if (next === 'complete') {
+      logActivity({ event_type: 'album_complete', spotlight_id: spotlightId, album_id: album.album_id, album_name: album.album_name, artist_name: artistName })
+    }
     setUpdating(false)
   }
 
@@ -481,6 +486,12 @@ export default function SpotlightPage() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Reactions + Comments */}
+      <div className="flex flex-col gap-3 mb-6 bg-[#110e0b] border border-white/5 rounded-2xl p-4">
+        <Reactions spotlightId={id} />
+        <Comments spotlightId={id} />
       </div>
 
       {/* Tabs */}

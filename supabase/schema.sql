@@ -1,6 +1,3 @@
--- Artist Spotlight Schema
--- Run this in your Supabase SQL editor
-
 create table if not exists spotlights (
   id uuid primary key default gen_random_uuid(),
   artist_id text not null,

@@ -1,14 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createBrowserSupabase } from '@/lib/supabase/browser'
 import type { Spotlight, SpotlightAlbum, SpotlightWithAlbums, AlbumInsights } from '@/types'
 
-function getClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) throw new Error('Missing Supabase environment variables')
-  return createClient(url, key)
-}
-
-export const supabase = getClient()
+export const supabase = createBrowserSupabase()
 
 export async function createSpotlight(data: {
   artist_id: string
@@ -16,9 +9,10 @@ export async function createSpotlight(data: {
   artist_image_url: string | null
   artist_genres: string[]
 }): Promise<Spotlight> {
+  const { data: { user } } = await supabase.auth.getUser()
   const { data: spotlight, error } = await supabase
     .from('spotlights')
-    .insert(data)
+    .insert({ ...data, user_id: user?.id ?? null })
     .select()
     .single()
   if (error) throw error
@@ -26,9 +20,12 @@ export async function createSpotlight(data: {
 }
 
 export async function getSpotlights(): Promise<(Spotlight & { spotlight_albums: { status: string }[] })[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
   const { data, error } = await supabase
     .from('spotlights')
     .select('*, spotlight_albums(status)')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []) as (Spotlight & { spotlight_albums: { status: string }[] })[]
@@ -165,4 +162,148 @@ export async function saveAlbumInsights(data: {
     .single()
   if (error) throw error
   return insights
+}
+
+// ─── Social ──────────────────────────────────────────────────────────────────
+
+export async function getProfile(username: string) {
+  const { data } = await supabase.from('profiles').select('*').eq('username', username).single()
+  return data
+}
+
+export async function getProfileById(id: string) {
+  const { data } = await supabase.from('profiles').select('*').eq('id', id).single()
+  return data
+}
+
+export async function getUserSpotlights(userId: string): Promise<(Spotlight & { spotlight_albums: { status: string }[] })[]> {
+  const { data } = await supabase
+    .from('spotlights')
+    .select('*, spotlight_albums(status)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as (Spotlight & { spotlight_albums: { status: string }[] })[]
+}
+
+export async function followUser(followingId: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.from('follows').insert({ follower_id: user.id, following_id: followingId })
+}
+
+export async function unfollowUser(followingId: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.from('follows').delete().eq('follower_id', user.id).eq('following_id', followingId)
+}
+
+export async function isFollowing(followingId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const { data } = await supabase
+    .from('follows')
+    .select('follower_id')
+    .eq('follower_id', user.id)
+    .eq('following_id', followingId)
+    .maybeSingle()
+  return !!data
+}
+
+export async function getFollowerCount(userId: string): Promise<number> {
+  const { count } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId)
+  return count ?? 0
+}
+
+export async function getFollowingCount(userId: string): Promise<number> {
+  const { count } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId)
+  return count ?? 0
+}
+
+export interface ActivityEvent {
+  id: string
+  user_id: string
+  event_type: string
+  spotlight_id: string | null
+  album_id: string | null
+  album_name: string | null
+  artist_name: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+  profiles: { username: string; display_name: string; avatar_url: string | null }
+  spotlights: { artist_name: string; artist_image_url: string | null } | null
+}
+
+export async function getFriendFeed(): Promise<ActivityEvent[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data: followData } = await supabase.from('follows').select('following_id').eq('follower_id', user.id)
+  const friendIds = (followData ?? []).map((f) => f.following_id)
+  if (!friendIds.length) return []
+  const { data } = await supabase
+    .from('activity_events')
+    .select('*, profiles(username, display_name, avatar_url), spotlights(artist_name, artist_image_url)')
+    .in('user_id', friendIds)
+    .order('created_at', { ascending: false })
+    .limit(50)
+  return (data ?? []) as ActivityEvent[]
+}
+
+export async function logActivity(event: {
+  event_type: string
+  spotlight_id?: string
+  album_id?: string
+  album_name?: string
+  artist_name?: string
+  metadata?: Record<string, unknown>
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.from('activity_events').insert({ ...event, user_id: user.id })
+}
+
+export async function getReactions(spotlightId: string, albumId?: string | null) {
+  const query = supabase.from('reactions').select('emoji, user_id, profiles(username, display_name)').eq('spotlight_id', spotlightId)
+  if (albumId) query.eq('album_id', albumId)
+  else query.is('album_id', null)
+  const { data } = await query
+  return data ?? []
+}
+
+export async function toggleReaction(spotlightId: string, emoji: string, albumId?: string | null) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const query = supabase.from('reactions')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('spotlight_id', spotlightId)
+    .eq('emoji', emoji)
+  if (albumId) query.eq('album_id', albumId)
+  else query.is('album_id', null)
+  const { data: existing } = await query.maybeSingle()
+  if (existing) {
+    await supabase.from('reactions').delete().eq('id', existing.id)
+  } else {
+    await supabase.from('reactions').insert({ user_id: user.id, spotlight_id: spotlightId, album_id: albumId ?? null, emoji })
+  }
+}
+
+export async function getComments(spotlightId: string) {
+  const { data } = await supabase
+    .from('comments')
+    .select('*, profiles(username, display_name, avatar_url)')
+    .eq('spotlight_id', spotlightId)
+    .is('album_id', null)
+    .order('created_at', { ascending: true })
+  return data ?? []
+}
+
+export async function addComment(spotlightId: string, content: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  await supabase.from('comments').insert({ user_id: user.id, spotlight_id: spotlightId, content })
+}
+
+export async function getComparisonData(spotlightId1: string, spotlightId2: string) {
+  const [s1, s2] = await Promise.all([getSpotlight(spotlightId1), getSpotlight(spotlightId2)])
+  return { s1, s2 }
 }
