@@ -108,6 +108,8 @@ export default function NewSpotlightPage() {
           notes: '',
           verdict: '',
           completed_at: null,
+          global_rank_position: null,
+          auto_score: null,
         }))
       )
 

@@ -134,3 +134,7 @@ create index if not exists activity_user_idx on activity_events(user_id);
 create index if not exists activity_created_idx on activity_events(created_at desc);
 create index if not exists reactions_spotlight_idx on reactions(spotlight_id, album_id);
 create index if not exists comments_spotlight_idx on comments(spotlight_id);
+
+-- Global ranking columns (separate from per-artist rank_position)
+alter table spotlight_albums add column if not exists global_rank_position int;
+alter table spotlight_albums add column if not exists auto_score float;

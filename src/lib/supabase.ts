@@ -307,3 +307,35 @@ export async function getComparisonData(spotlightId1: string, spotlightId2: stri
   const [s1, s2] = await Promise.all([getSpotlight(spotlightId1), getSpotlight(spotlightId2)])
   return { s1, s2 }
 }
+
+// ─── Global rankings ──────────────────────────────────────────────────────────
+
+export interface GlobalAlbum extends SpotlightAlbum {
+  artist_name: string
+  artist_image_url: string | null
+  spotlight_id: string
+}
+
+export async function getGlobalRankedAlbums(): Promise<GlobalAlbum[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data } = await supabase
+    .from('spotlight_albums')
+    .select('*, spotlights!inner(user_id, artist_name, artist_image_url)')
+    .eq('status', 'complete')
+    .eq('spotlights.user_id', user.id)
+    .order('global_rank_position', { ascending: true, nullsFirst: false })
+  return (data ?? []).map((a: SpotlightAlbum & { spotlights: { artist_name: string; artist_image_url: string | null } }) => ({
+    ...a,
+    artist_name: a.spotlights.artist_name,
+    artist_image_url: a.spotlights.artist_image_url,
+  })) as GlobalAlbum[]
+}
+
+export async function updateGlobalRanks(updates: Array<{ id: string; global_rank_position: number }>) {
+  await Promise.all(
+    updates.map(({ id, global_rank_position }) =>
+      supabase.from('spotlight_albums').update({ global_rank_position }).eq('id', id)
+    )
+  )
+}

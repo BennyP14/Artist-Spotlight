@@ -55,6 +55,8 @@ export interface SpotlightAlbum {
   spotify_url: string | null
   status: AlbumStatus
   rank_position: number | null
+  global_rank_position: number | null
+  auto_score: number | null
   notes: string
   verdict: string
   completed_at: string | null
