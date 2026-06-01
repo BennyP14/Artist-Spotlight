@@ -394,32 +394,36 @@ export default function SpotlightPage() {
             <div className="absolute inset-0 bg-gradient-to-r from-[#110e0b] via-[#110e0b]/80 to-transparent" />
           </div>
         )}
-        <div className="relative flex items-end gap-4 p-6">
-          {spotlight.artist_image_url && (
-            <Image
-              src={spotlight.artist_image_url}
-              alt={spotlight.artist_name}
-              width={80}
-              height={80}
-              className="rounded-xl shadow-2xl shadow-black/60 flex-shrink-0 ring-1 ring-white/10"
-            />
-          )}
-          <div className="min-w-0">
-            <p className="text-xs text-orange-500/80 uppercase tracking-widest font-medium mb-1">Artist Spotlight</p>
-            <h1 className="text-2xl font-bold text-white tracking-tight">{spotlight.artist_name}</h1>
-            {spotlight.artist_genres.length > 0 && (
-              <p className="text-xs text-zinc-600 uppercase tracking-widest mt-1">
-                {spotlight.artist_genres.slice(0, 3).join(' · ')}
-              </p>
+        <div className="relative p-4 sm:p-6">
+          {/* Top row: image + text */}
+          <div className="flex items-center gap-4">
+            {spotlight.artist_image_url && (
+              <Image
+                src={spotlight.artist_image_url}
+                alt={spotlight.artist_name}
+                width={64}
+                height={64}
+                className="rounded-xl shadow-2xl shadow-black/60 flex-shrink-0 ring-1 ring-white/10 sm:w-20 sm:h-20"
+              />
             )}
-            <div className="flex items-center gap-4 mt-2 text-xs text-zinc-600">
-              <span>{albums.length} albums</span>
-              {complete > 0 && <span className="text-orange-400 font-medium">{complete} complete</span>}
-              {listening > 0 && <span className="text-amber-400 font-medium">listening now</span>}
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-orange-500/80 uppercase tracking-widest font-medium mb-1">Artist Spotlight</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">{spotlight.artist_name}</h1>
+              {spotlight.artist_genres.length > 0 && (
+                <p className="text-xs text-zinc-600 uppercase tracking-widest mt-1">
+                  {spotlight.artist_genres.slice(0, 2).join(' · ')}
+                </p>
+              )}
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-600">
+                <span>{albums.length} albums</span>
+                {complete > 0 && <span className="text-orange-400 font-medium">{complete} complete</span>}
+                {listening > 0 && <span className="text-amber-400 font-medium">now listening</span>}
+              </div>
             </div>
           </div>
 
-          <div className="ml-auto flex-shrink-0 flex gap-2 flex-wrap justify-end">
+          {/* Bottom row: action buttons */}
+          <div className="flex gap-2 mt-4">
             <a
               href={`/api/og/${id}`}
               target="_blank"
@@ -449,7 +453,7 @@ export default function SpotlightPage() {
 
         {/* Progress bar */}
         {albums.length > 0 && (
-          <div className="relative mx-6 mb-3 h-px bg-white/5 rounded-full overflow-hidden">
+          <div className="relative mx-4 sm:mx-6 mb-3 h-px bg-white/5 rounded-full overflow-hidden">
             <div
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all duration-500"
               style={{ width: `${(complete / albums.length) * 100}%` }}
@@ -465,7 +469,7 @@ export default function SpotlightPage() {
 
         {/* Stats strip */}
         {albums.length > 0 && (
-          <div className="relative flex items-center gap-5 px-6 pb-4 text-xs text-zinc-700 uppercase tracking-wider">
+          <div className="relative flex items-center gap-4 px-4 sm:px-6 pb-4 text-xs text-zinc-700 uppercase tracking-wider">
             <span>
               <span className="text-white font-medium normal-case">{complete}</span>/{albums.length} complete
             </span>
