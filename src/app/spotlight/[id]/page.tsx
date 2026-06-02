@@ -284,6 +284,33 @@ export default function SpotlightPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  // Pre-generate album insights in the background once albums load
+  useEffect(() => {
+    if (!spotlight || !albums.length) return
+    const prefetch = async (album: SpotlightAlbum) => {
+      try {
+        await fetch('/api/insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            albumId: album.album_id,
+            artistName: spotlight.artist_name,
+            albumName: album.album_name,
+            releaseYear: album.release_year,
+            genres: spotlight.artist_genres,
+          }),
+        })
+      } catch { /* silent */ }
+    }
+    // Prioritise albums in progress, then unlistened — stagger 600ms apart
+    const ordered = [
+      ...albums.filter(a => a.status !== 'unlistened'),
+      ...albums.filter(a => a.status === 'unlistened'),
+    ]
+    ordered.forEach((album, i) => setTimeout(() => prefetch(album), i * 600))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spotlight?.id, albums.length])
+
   // Real-time collaboration — sync album changes from other clients
   useEffect(() => {
     const channel = supabase
