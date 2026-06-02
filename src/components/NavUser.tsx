@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/auth'
 
 export default function NavUser() {
   const { user, profile, loading, signOut } = useAuth()
   const [open, setOpen] = useState(false)
+  const router = useRouter()
 
   if (loading) return <div className="w-7 h-7 rounded-full bg-white/5 animate-pulse" />
 
@@ -20,6 +22,12 @@ export default function NavUser() {
         Sign in
       </Link>
     )
+  }
+
+  const handleSignOut = async () => {
+    setOpen(false)
+    await signOut()
+    router.push('/auth/signin')
   }
 
   return (
@@ -45,24 +53,20 @@ export default function NavUser() {
               <p className="text-xs font-medium text-white truncate">{profile?.display_name ?? user.email}</p>
               <p className="text-xs text-zinc-600 truncate">@{profile?.username}</p>
             </div>
-            <Link
-              href={`/u/${profile?.username}`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-            >
-              Profile
+            <Link href={`/u/${profile?.username}`} onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              My Profile
             </Link>
-            <Link
-              href="/feed"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
-            >
+            <Link href="/feed" onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
               Friend Feed
             </Link>
-            <button
-              onClick={() => { signOut(); setOpen(false) }}
-              className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-zinc-600 hover:text-red-400 hover:bg-white/5 transition-colors border-t border-white/5 mt-1"
-            >
+            <Link href="/people" onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">
+              Find Friends
+            </Link>
+            <button onClick={handleSignOut}
+              className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-zinc-600 hover:text-red-400 hover:bg-white/5 transition-colors border-t border-white/5 mt-1">
               Sign out
             </button>
           </div>

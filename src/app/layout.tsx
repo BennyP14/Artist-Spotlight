@@ -40,10 +40,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Artist Spotlight
               </span>
             </a>
-            <a href="/feed" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium">
+            <a href="/feed" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium hidden sm:block">
               Feed
             </a>
-            <a href="/rankings" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium">
+            <a href="/people" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium hidden sm:block">
+              Friends
+            </a>
+            <a href="/rankings" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium hidden sm:block">
               Rankings
             </a>
             <div className="ml-auto flex items-center gap-3">
