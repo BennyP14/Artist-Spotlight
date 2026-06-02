@@ -41,7 +41,7 @@ function InsightsPanel({
 }) {
   const [insights, setInsights] = useState<AlbumInsights | null>(null)
   const [loading, setLoading] = useState(false)
-  const [tab, setTab] = useState<'context' | 'era' | 'reception' | 'wikipedia'>('context')
+  const [tab, setTab] = useState<'context' | 'era' | 'reception'>('context')
   const [generated, setGenerated] = useState(false)
 
   useEffect(() => {
@@ -76,7 +76,6 @@ function InsightsPanel({
     { key: 'context', label: 'Overview', content: insights?.ai_context },
     { key: 'era', label: 'Era & Story', content: insights?.era_context },
     { key: 'reception', label: 'Reception', content: insights?.chart_info },
-    { key: 'wikipedia', label: 'Wikipedia', content: insights?.wikipedia_summary },
   ] as const
 
   return (
@@ -154,6 +153,9 @@ export default function AlbumPage() {
   const [saveTimer, setSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [trackRatings, setTrackRatings] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [expandedTrack, setExpandedTrack] = useState<number | null>(null)
+  const [trackSummaries, setTrackSummaries] = useState<Record<number, string>>({})
+  const [trackLoading, setTrackLoading] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     getSpotlight(spotlightId).then((data) => {
@@ -204,6 +206,29 @@ export default function AlbumPage() {
     if (verdictTimer) clearTimeout(verdictTimer)
     setVerdictTimer(setTimeout(async () => { if (album) await updateAlbumVerdict(album.id, val) }, 800))
   }, [album, verdictTimer])
+
+  const handleTrackExpand = async (track: Track) => {
+    if (expandedTrack === track.trackId) { setExpandedTrack(null); return }
+    setExpandedTrack(track.trackId)
+    if (trackSummaries[track.trackId]) return
+    setTrackLoading(prev => ({ ...prev, [track.trackId]: true }))
+    try {
+      const res = await fetch('/api/track-insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistName: spotlight?.artist_name,
+          trackName: track.trackName,
+          albumName: album?.album_name,
+          releaseYear: album?.release_year,
+        }),
+      })
+      const { summary } = await res.json()
+      setTrackSummaries(prev => ({ ...prev, [track.trackId]: summary }))
+    } finally {
+      setTrackLoading(prev => ({ ...prev, [track.trackId]: false }))
+    }
+  }
 
   if (loading) {
     return (
@@ -329,50 +354,78 @@ export default function AlbumPage() {
         <p className="text-xs text-zinc-700">Auto-saved</p>
       </div>
 
-      {/* Tracklist */}
+      {/* Tracklist with accordion insights */}
       {tracks.length > 0 && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-          <h2 className="font-semibold text-white mb-3">Tracklist</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-white">Tracklist</h2>
+            <p className="text-xs text-zinc-600 uppercase tracking-widest">Tap for insights</p>
+          </div>
           <div className="space-y-0.5">
             {tracks.map((track) => {
               const rating = trackRatings[String(track.trackId)] ?? 0
+              const isExpanded = expandedTrack === track.trackId
+              const isLoading = trackLoading[track.trackId]
+              const summary = trackSummaries[track.trackId]
               return (
-                <div key={track.trackId} className="flex items-center gap-3 py-2 group">
-                  <span className="w-6 text-right text-xs text-zinc-600 flex-shrink-0">{track.trackNumber}</span>
-                  <span className="flex-1 text-sm text-zinc-300 truncate group-hover:text-white transition-colors">
-                    {track.trackName}
-                    {track.trackExplicitness === 'explicit' && (
-                      <span className="ml-2 text-xs text-zinc-600 bg-zinc-800 px-1 rounded">E</span>
+                <div key={track.trackId}>
+                  <div
+                    className={cn(
+                      'flex items-center gap-3 py-2 group cursor-pointer rounded-lg px-1 -mx-1 transition-colors',
+                      isExpanded ? 'bg-white/5' : 'hover:bg-white/3'
                     )}
-                  </span>
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => handleTrackRating(track, star)}
-                        className="p-0.5"
-                        title={`Rate ${star} star${star !== 1 ? 's' : ''}`}
-                      >
-                        <svg
-                          className={`w-3 h-3 transition-colors ${star <= rating ? 'text-amber-400' : 'text-zinc-700 hover:text-amber-400/50'}`}
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      </button>
-                    ))}
-                  </div>
-                  {rating > 0 && (
-                    <div className="flex items-center gap-0.5 group-hover:hidden flex-shrink-0">
+                    onClick={() => handleTrackExpand(track)}
+                  >
+                    <span className="w-6 text-right text-xs text-zinc-600 flex-shrink-0">{track.trackNumber}</span>
+                    <span className={cn('flex-1 text-sm truncate transition-colors', isExpanded ? 'text-orange-400' : 'text-zinc-300 group-hover:text-white')}>
+                      {track.trackName}
+                      {track.trackExplicitness === 'explicit' && (
+                        <span className="ml-2 text-xs text-zinc-600 bg-zinc-800 px-1 rounded">E</span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={e => e.stopPropagation()}>
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <svg key={star} className={`w-3 h-3 ${star <= rating ? 'text-amber-400' : 'text-zinc-800'}`} fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
+                        <button key={star} onClick={() => handleTrackRating(track, star)} className="p-0.5" title={`Rate ${star} star${star !== 1 ? 's' : ''}`}>
+                          <svg className={`w-3 h-3 transition-colors ${star <= rating ? 'text-amber-400' : 'text-zinc-700 hover:text-amber-400/50'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </button>
                       ))}
                     </div>
+                    {rating > 0 && (
+                      <div className="flex items-center gap-0.5 group-hover:hidden flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg key={star} className={`w-3 h-3 ${star <= rating ? 'text-amber-400' : 'text-zinc-800'}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    )}
+                    <span className="text-xs text-zinc-600 flex-shrink-0 w-8 text-right">{formatDuration(track.trackTimeMillis)}</span>
+                    <svg className={cn('w-3 h-3 text-zinc-700 flex-shrink-0 transition-transform', isExpanded && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+
+                  {/* Accordion panel */}
+                  {isExpanded && (
+                    <div className="ml-7 my-2 p-3 bg-[#0c0a08] border border-white/5 rounded-xl animate-fade-in">
+                      {isLoading ? (
+                        <div className="flex items-center gap-2 py-1">
+                          <div className="w-3.5 h-3.5 border border-zinc-700 border-t-orange-400 rounded-full animate-spin flex-shrink-0" />
+                          <span className="text-xs text-zinc-600 uppercase tracking-widest">Generating insights…</span>
+                        </div>
+                      ) : summary ? (
+                        <div className="text-xs text-zinc-400 leading-relaxed space-y-2">
+                          {summary.split('\n\n').map((para, i) => (
+                            <p key={i}>{para.trim()}</p>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-600">No summary available.</p>
+                      )}
+                    </div>
                   )}
-                  <span className="text-xs text-zinc-600 flex-shrink-0 w-8 text-right">{formatDuration(track.trackTimeMillis)}</span>
                 </div>
               )
             })}
