@@ -74,6 +74,7 @@ export async function getArtistWithAlbums(
       seen.add(key)
       return true
     })
+    .filter((a: ItunesAlbum) => a.trackCount > 6)
 
   return { artist: artist ?? null, albums }
 }
