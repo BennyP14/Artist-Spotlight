@@ -4,7 +4,61 @@ import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/browser'
 
-type Mode = 'signin' | 'signup'
+type Mode = 'signin' | 'signup' | 'reset'
+
+function ResetForm({ email, setEmail, onBack, supabase, origin }: {
+  email: string
+  setEmail: (v: string) => void
+  onBack: () => void
+  supabase: ReturnType<typeof createClient>
+  origin: string
+}) {
+  const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const send = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=/auth/update-password`,
+    })
+    setSent(true)
+    setLoading(false)
+  }
+
+  if (sent) return (
+    <div className="text-center py-4">
+      <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mx-auto mb-4">
+        <svg className="w-6 h-6 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <p className="text-white font-semibold mb-1">Check your inbox</p>
+      <p className="text-zinc-500 text-sm">Password reset link sent to <span className="text-zinc-300">{email}</span></p>
+      <button onClick={onBack} className="mt-5 text-xs text-zinc-600 hover:text-zinc-400 underline">Back to sign in</button>
+    </div>
+  )
+
+  return (
+    <div>
+      <p className="text-sm text-zinc-400 mb-4">Enter your email and we&apos;ll send a link to reset your password.</p>
+      <form onSubmit={send} className="space-y-3">
+        <input
+          type="email" value={email} onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com" required autoFocus
+          className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500/40 transition-colors text-sm"
+        />
+        <button type="submit" disabled={loading || !email}
+          className="w-full bg-orange-500 hover:bg-orange-400 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-40 tracking-wide text-sm">
+          {loading ? 'Sending…' : 'Send reset link'}
+        </button>
+        <button type="button" onClick={onBack} className="w-full text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
+          ← Back to sign in
+        </button>
+      </form>
+    </div>
+  )
+}
 
 function SignInForm() {
   const searchParams = useSearchParams()
@@ -92,19 +146,25 @@ function SignInForm() {
 
         <div className="bg-[#110e0b] border border-white/5 rounded-2xl p-7">
 
-          {/* Mode toggle */}
-          <div className="flex gap-1 bg-white/5 rounded-lg p-1 mb-6">
-            {(['signin', 'signup'] as Mode[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => { setMode(m); setError(null) }}
-                className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all ${mode === m ? 'bg-white/10 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
-              >
-                {m === 'signin' ? 'Sign in' : 'Create account'}
-              </button>
-            ))}
-          </div>
+          {/* Mode toggle — hidden on reset screen */}
+          {mode !== 'reset' && (
+            <div className="flex gap-1 bg-white/5 rounded-lg p-1 mb-6">
+              {(['signin', 'signup'] as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setError(null) }}
+                  className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-all ${mode === m ? 'bg-white/10 text-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+                >
+                  {m === 'signin' ? 'Sign in' : 'Create account'}
+                </button>
+              ))}
+            </div>
+          )}
 
+          {/* Reset password screen */}
+          {mode === 'reset' && <ResetForm email={email} setEmail={setEmail} onBack={() => { setMode('signin'); setError(null) }} supabase={supabase} origin={typeof window !== 'undefined' ? window.location.origin : ''} />}
+
+          {mode !== 'reset' && <>
           {/* Google */}
           <button
             onClick={signInWithGoogle}
@@ -172,13 +232,16 @@ function SignInForm() {
           </form>
 
           {mode === 'signin' && (
-            <p className="text-center text-zinc-700 text-xs mt-4">
-              No account yet?{' '}
-              <button onClick={() => { setMode('signup'); setError(null) }} className="text-orange-400 hover:text-orange-300">
-                Create one free
+            <div className="flex justify-between mt-4">
+              <button onClick={() => { setMode('signup'); setError(null) }} className="text-zinc-700 hover:text-zinc-400 text-xs">
+                New here? Create account
               </button>
-            </p>
+              <button onClick={() => { setMode('reset'); setError(null) }} className="text-zinc-700 hover:text-orange-400 text-xs transition-colors">
+                Forgot password?
+              </button>
+            </div>
           )}
+          </> /* end mode !== reset */}
         </div>
 
         <p className="text-center text-zinc-800 text-xs mt-5 uppercase tracking-widest">
