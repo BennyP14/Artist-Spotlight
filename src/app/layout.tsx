@@ -50,12 +50,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Rankings
             </a>
             <div className="ml-auto flex items-center gap-3">
-              <a
-                href="/spotlight/new"
-                className="text-xs bg-orange-500 hover:bg-orange-400 text-white font-semibold px-3 py-1.5 rounded-md transition-colors tracking-wide shadow-[0_4px_14px_rgba(249,115,22,0.25)]"
-              >
-                + New
-              </a>
               <NavUser />
             </div>
           </nav>
