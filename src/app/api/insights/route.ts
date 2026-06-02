@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateAlbumInsights, generateWikipediaSummary } from '@/lib/claude'
+import { generateAlbumInsights } from '@/lib/claude'
 import { getAlbumInsights, saveAlbumInsights } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
@@ -14,11 +14,7 @@ export async function POST(request: NextRequest) {
     const cached = await getAlbumInsights(albumId)
     if (cached) return NextResponse.json({ insights: cached })
 
-    // Generate in parallel — Claude insights + Wikipedia summary
-    const [claudeInsights, wikipediaSummary] = await Promise.all([
-      generateAlbumInsights(artistName, albumName, releaseYear, genres ?? []),
-      generateWikipediaSummary(`${albumName} (${artistName} album)`),
-    ])
+    const claudeInsights = await generateAlbumInsights(artistName, albumName, releaseYear, genres ?? [])
 
     const insights = await saveAlbumInsights({
       album_id: albumId,
@@ -27,7 +23,7 @@ export async function POST(request: NextRequest) {
       ai_context: claudeInsights.aiContext,
       era_context: claudeInsights.eraContext,
       chart_info: claudeInsights.chartInfo,
-      wikipedia_summary: wikipediaSummary ?? '',
+      wikipedia_summary: '',
     })
 
     return NextResponse.json({ insights })

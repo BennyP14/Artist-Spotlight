@@ -13,27 +13,25 @@ export async function generateAlbumInsights(
   chartInfo: string
 }> {
   const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1800,
+    model: 'claude-haiku-4-5',
+    max_tokens: 900,
     system:
-      'You are a knowledgeable music journalist with deep expertise across all genres. Write engaging, factual insights that make a listener excited to hear an album. Be specific — mention real songs, producers, studios, collaborators where relevant.',
+      'You are a knowledgeable music journalist. Write concise, engaging, factual insights. Be specific — mention real songs, producers, studios, collaborators where relevant.',
     messages: [
       {
         role: 'user',
-        content: `Provide three distinct sections of insights about "${albumName}" by ${artistName} (${releaseYear}).
+        content: `Provide three sections about "${albumName}" by ${artistName} (${releaseYear}).
 
 ## Album Context
-2-3 paragraphs. What defines this album's sound? What was the band/artist trying to achieve artistically? What are the key tracks and why do they matter? What does it feel like to listen to?
+1-2 paragraphs. What defines this album's sound, key tracks, and what it feels like to listen to?
 
 ## Era & Story
-1-2 paragraphs. What was happening in ${artistName}'s career and personal life during this period? Any notable recording sessions, tensions, lineup changes, or creative breakthroughs? What made ${releaseYear} significant for them?
+1 paragraph. What was happening in ${artistName}'s career during this period? Notable recording details or breakthroughs?
 
 ## Reception & Legacy
-1 paragraph. How was this received critically and commercially at release? How is it regarded now — is it considered a classic, underrated, divisive? Any notable chart positions, awards, or lasting cultural influence?
+1 paragraph. Critical/commercial reception and how it's regarded today.
 
-Genres context: ${genres.join(', ')}
-
-Use the exact section headers shown above (##). Keep it human and engaging, not encyclopaedic.`,
+Genres: ${genres.join(', ')}. Use the exact headers above (##). Be concise and human, not encyclopaedic.`,
       },
     ],
   })
