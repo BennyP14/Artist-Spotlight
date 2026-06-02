@@ -47,7 +47,9 @@ function InsightsPanel({
   useEffect(() => {
     getAlbumInsights(album.album_id).then((data) => {
       if (data) { setInsights(data); setGenerated(true) }
+      else generate() // auto-generate on first visit
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [album.album_id])
 
   const generate = async () => {
@@ -82,26 +84,25 @@ function InsightsPanel({
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-white">Insights</h2>
-        {!generated && !loading && (
-          <button
-            onClick={generate}
-            className="text-xs bg-amber-500 hover:bg-amber-400 text-black font-semibold px-3 py-1.5 rounded-lg transition-colors"
-          >
-            Generate with AI
-          </button>
-        )}
         {loading && (
           <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <div className="w-3.5 h-3.5 border border-zinc-600 border-t-amber-400 rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border border-zinc-700 border-t-orange-400 rounded-full animate-spin" />
             Generating…
           </div>
+        )}
+        {generated && !loading && (
+          <button onClick={generate} className="text-xs text-zinc-700 hover:text-zinc-400 transition-colors">
+            Refresh
+          </button>
         )}
       </div>
 
       {!generated && !loading && (
-        <p className="text-sm text-zinc-600 text-center py-8">
-          Click &ldquo;Generate with AI&rdquo; to get context, historical background, and reception info for this album.
-        </p>
+        <div className="space-y-2 py-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className={`h-3 shimmer rounded ${i === 2 ? 'w-2/3' : 'w-full'}`} />
+          ))}
+        </div>
       )}
 
       {(generated || loading) && (
@@ -176,6 +177,47 @@ export default function AlbumPage() {
       .then((d) => { if (d.tracks) setTracks(d.tracks) })
       .catch(() => {})
   }, [albumId])
+
+  // Silently prefetch all track insights in the background after tracks load
+  useEffect(() => {
+    if (!tracks.length || !spotlight || !album) return
+    const prefetch = async (track: Track) => {
+      if (trackSummaries[track.trackId]) return
+      try {
+        const res = await fetch('/api/track-insights', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            artistName: spotlight.artist_name,
+            trackName: track.trackName,
+            albumName: album.album_name,
+            releaseYear: album.release_year,
+          }),
+        })
+        const contentType = res.headers.get('content-type') ?? ''
+        if (contentType.includes('application/json')) {
+          const { summary } = await res.json()
+          setTrackSummaries(prev => ({ ...prev, [track.trackId]: summary }))
+        } else {
+          const reader = res.body!.getReader()
+          const decoder = new TextDecoder()
+          let accumulated = ''
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            accumulated += decoder.decode(value, { stream: true })
+            setTrackSummaries(prev => ({ ...prev, [track.trackId]: accumulated }))
+          }
+        }
+      } catch { /* silent — user can still trigger manually */ }
+    }
+
+    // Stagger requests 400ms apart so we don't hammer the API
+    tracks.forEach((track, i) => {
+      setTimeout(() => prefetch(track), i * 400)
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks, spotlight?.artist_name, album?.album_name])
 
   useEffect(() => {
     if (!spotlightId || !albumId) return
