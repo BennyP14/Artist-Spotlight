@@ -34,10 +34,12 @@ function InsightsPanel({
   album,
   artistName,
   artistGenres,
+  onReady,
 }: {
   album: SpotlightAlbum
   artistName: string
   artistGenres: string[]
+  onReady: () => void
 }) {
   const [insights, setInsights] = useState<AlbumInsights | null>(null)
   const [loading, setLoading] = useState(false)
@@ -46,8 +48,8 @@ function InsightsPanel({
 
   useEffect(() => {
     getAlbumInsights(album.album_id).then((data) => {
-      if (data) { setInsights(data); setGenerated(true) }
-      else generate() // auto-generate on first visit
+      if (data) { setInsights(data); setGenerated(true); onReady() }
+      else generate()
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [album.album_id])
@@ -69,6 +71,7 @@ function InsightsPanel({
       const { insights: data } = await res.json()
       setInsights(data)
       setGenerated(true)
+      onReady()
     } finally {
       setLoading(false)
     }
@@ -157,6 +160,7 @@ export default function AlbumPage() {
   const [expandedTrack, setExpandedTrack] = useState<number | null>(null)
   const [trackSummaries, setTrackSummaries] = useState<Record<number, string>>({})
   const [trackLoading, setTrackLoading] = useState<Record<number, boolean>>({})
+  const [insightsReady, setInsightsReady] = useState(false)
 
   useEffect(() => {
     getSpotlight(spotlightId).then((data) => {
@@ -178,9 +182,9 @@ export default function AlbumPage() {
       .catch(() => {})
   }, [albumId])
 
-  // Silently prefetch all track insights in the background after tracks load
+  // Silently prefetch all track insights — only after album insights are ready
   useEffect(() => {
-    if (!tracks.length || !spotlight || !album) return
+    if (!tracks.length || !spotlight || !album || !insightsReady) return
     const prefetch = async (track: Track) => {
       if (trackSummaries[track.trackId]) return
       try {
@@ -217,7 +221,7 @@ export default function AlbumPage() {
       setTimeout(() => prefetch(track), i * 400)
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tracks, spotlight?.artist_name, album?.album_name])
+  }, [tracks, spotlight?.artist_name, album?.album_name, insightsReady])
 
   useEffect(() => {
     if (!spotlightId || !albumId) return
@@ -384,7 +388,7 @@ export default function AlbumPage() {
       </div>
 
       {/* Insights */}
-      <InsightsPanel album={album} artistName={spotlight.artist_name} artistGenres={spotlight.artist_genres} />
+      <InsightsPanel album={album} artistName={spotlight.artist_name} artistGenres={spotlight.artist_genres} onReady={() => setInsightsReady(true)} />
 
       {/* Verdict + Notes */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
