@@ -223,9 +223,29 @@ export default function AlbumPage() {
           releaseYear: album?.release_year,
         }),
       })
-      const { summary } = await res.json()
-      setTrackSummaries(prev => ({ ...prev, [track.trackId]: summary }))
-    } finally {
+
+      const contentType = res.headers.get('content-type') ?? ''
+
+      if (contentType.includes('application/json')) {
+        // Cached — return instantly
+        const { summary } = await res.json()
+        setTrackSummaries(prev => ({ ...prev, [track.trackId]: summary }))
+        setTrackLoading(prev => ({ ...prev, [track.trackId]: false }))
+      } else {
+        // Streaming — show text word by word
+        setTrackLoading(prev => ({ ...prev, [track.trackId]: false }))
+        setTrackSummaries(prev => ({ ...prev, [track.trackId]: '' }))
+        const reader = res.body!.getReader()
+        const decoder = new TextDecoder()
+        let accumulated = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          accumulated += decoder.decode(value, { stream: true })
+          setTrackSummaries(prev => ({ ...prev, [track.trackId]: accumulated }))
+        }
+      }
+    } catch {
       setTrackLoading(prev => ({ ...prev, [track.trackId]: false }))
     }
   }
