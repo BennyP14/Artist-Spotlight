@@ -308,6 +308,11 @@ export async function toggleReaction(spotlightId: string, emoji: string, albumId
     await supabase.from('reactions').delete().eq('id', existing.id)
   } else {
     await supabase.from('reactions').insert({ user_id: user.id, spotlight_id: spotlightId, album_id: albumId ?? null, emoji })
+    await logActivity({
+      event_type: 'reaction_added',
+      spotlight_id: spotlightId,
+      metadata: { emoji },
+    })
   }
 }
 
@@ -325,6 +330,11 @@ export async function addComment(spotlightId: string, content: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
   await supabase.from('comments').insert({ user_id: user.id, spotlight_id: spotlightId, content })
+  await logActivity({
+    event_type: 'comment_added',
+    spotlight_id: spotlightId,
+    metadata: { comment_preview: content.substring(0, 120) },
+  })
 }
 
 export async function getComparisonData(spotlightId1: string, spotlightId2: string) {
