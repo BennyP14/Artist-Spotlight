@@ -4,8 +4,10 @@ import { NextResponse } from 'next/server'
 
 const anthropic = new Anthropic()
 
+interface TrackRef { trackNumber: number; trackName: string }
+
 export async function POST(request: Request) {
-  const { artistName, trackName, albumName, releaseYear } = await request.json()
+  const { artistName, trackName, albumName, releaseYear, trackNumber, tracklist } = await request.json()
   if (!artistName || !trackName || !albumName) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
@@ -22,12 +24,19 @@ export async function POST(request: Request) {
 
   if (cached) return NextResponse.json({ summary: cached.summary })
 
+  // Build tracklist context to ground the model and prevent hallucination
+  const tracklistContext = Array.isArray(tracklist) && tracklist.length > 0
+    ? `\n\nFull tracklist of "${albumName}" for context:\n${(tracklist as TrackRef[]).map(t => `${t.trackNumber}. ${t.trackName}`).join('\n')}`
+    : ''
+
   // Stream from Claude Haiku (fast model) so text appears immediately
-  const prompt = `Write a concise 2–3 paragraph summary of the song "${trackName}" by ${artistName}, from the album "${albumName}" (${releaseYear}).
+  const prompt = `You are writing about the song "${trackName}" by ${artistName}.
 
-Cover: the song's origins and how it came to be written or recorded; notable instrumentation or production choices; what ${artistName} or collaborators have said about it, and its place within the album; any notable reception or lasting significance.
+IMPORTANT: "${albumName}" is the ALBUM title. "${trackName}" is the SONG you are writing about — do not confuse them. This song is track ${trackNumber ?? '?'} on the album.${tracklistContext}
 
-Draw from documented sources and the artist's own words where possible. Be factual and engaging. No headers or bullet points — flowing prose only.`
+In 2–3 paragraphs of flowing prose, cover: what makes "${trackName}" distinctive — its sound, production, and emotional feel; any known background on how it was written or recorded; what ${artistName} or collaborators have said about it; and its place within the album and the artist's broader catalogue.
+
+Write warmly and with genuine enthusiasm, like a knowledgeable music fan sharing why this song matters. No headers or bullet points — flowing prose only. Be specific and factual.`
 
   const stream = anthropic.messages.stream({
     model: 'claude-haiku-4-5',

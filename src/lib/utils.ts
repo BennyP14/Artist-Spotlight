@@ -23,6 +23,10 @@ export function appleMusicSearchUrl(artist: string, album: string): string {
   return `https://music.apple.com/search?term=${encodeURIComponent(`${artist} ${album}`)}`
 }
 
+export function spotifySearchUrl(artist: string, album: string): string {
+  return `https://open.spotify.com/search/${encodeURIComponent(`${artist} ${album}`)}`
+}
+
 export function statusLabel(status: string): string {
   return { unlistened: 'Not Started', listening: 'Now Listening', complete: 'Complete' }[status] ?? status
 }

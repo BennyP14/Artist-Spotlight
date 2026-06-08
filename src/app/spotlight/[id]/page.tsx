@@ -21,9 +21,9 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { getSpotlight, updateAlbumStatus, updateAlbumRanks, removeAlbumFromSpotlight, logActivity, supabase } from '@/lib/supabase'
+import { getSpotlight, updateAlbumStatus, updateAlbumRanks, removeAlbumFromSpotlight, logActivity, updateSpotlightGenres, supabase } from '@/lib/supabase'
 import type { SpotlightWithAlbums, SpotlightAlbum } from '@/types'
-import { cn, statusColor, statusLabel, appleMusicSearchUrl } from '@/lib/utils'
+import { cn, statusColor, statusLabel, appleMusicSearchUrl, spotifySearchUrl } from '@/lib/utils'
 import Reactions from '@/components/Reactions'
 import Comments from '@/components/Comments'
 
@@ -56,7 +56,7 @@ function SortableRankItem({
       )}
       <div className="min-w-0 flex-1">
         <p className="font-medium text-sm text-white truncate">{album.album_name}</p>
-        <p className="text-xs text-zinc-500">{album.release_year}</p>
+        <p className="text-xs text-zinc-400">{album.release_year}</p>
         {album.verdict && (
           <p className="text-xs text-zinc-400 italic mt-0.5 truncate">&ldquo;{album.verdict}&rdquo;</p>
         )}
@@ -207,7 +207,7 @@ function AlbumRow({
           <p className={cn('font-medium text-white text-sm truncate transition-colors tracking-tight', !selectMode && 'group-hover:text-orange-400')}>
             {album.album_name}
           </p>
-          <p className="text-xs text-zinc-700 uppercase tracking-widest mt-0.5">{album.release_year} · {album.total_tracks} tracks</p>
+          <p className="text-xs text-zinc-500 uppercase tracking-widest mt-0.5">{album.release_year} · {album.total_tracks} tracks</p>
         </div>
       </div>
 
@@ -220,9 +220,22 @@ function AlbumRow({
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             className="opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Apple Music"
           >
             <svg className="w-4 h-4 text-zinc-500 hover:text-white" viewBox="0 0 24 24" fill="currentColor">
               <path d="M23.997 6.124a9.23 9.23 0 0 0-.24-2.19c-.317-1.31-1.064-2.31-2.18-3.043a5.022 5.022 0 0 0-1.769-.73 7.7 7.7 0 0 0-1.114-.155c-.46-.014-.92-.013-1.38-.013H6.678c-.459 0-.918-.001-1.378.013a7.633 7.633 0 0 0-1.113.155 4.99 4.99 0 0 0-1.768.73C1.3 1.623.553 2.623.236 3.934A9.23 9.23 0 0 0 0 6.124c-.014.46-.013.92-.013 1.378v9.006c0 .459-.001.918.013 1.378.014.78.103 1.565.24 2.19.317 1.311 1.064 2.311 2.18 3.043a5.022 5.022 0 0 0 1.769.73c.37.083.744.13 1.114.155.46.014.92.013 1.38.013h10.16c.46 0 .92.001 1.38-.013a7.7 7.7 0 0 0 1.113-.155 4.99 4.99 0 0 0 1.768-.73c1.116-.732 1.863-1.732 2.18-3.043.138-.625.227-1.41.241-2.19.013-.46.013-.92.013-1.378V7.502c0-.459 0-.918-.013-1.378zM12 17.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11zm6.25-9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+            </svg>
+          </a>
+          <a
+            href={spotifySearchUrl(artistName, album.album_name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Spotify"
+          >
+            <svg className="w-4 h-4 text-zinc-500 hover:text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
             </svg>
           </a>
           <button
@@ -265,6 +278,9 @@ export default function SpotlightPage() {
   const [tab, setTab] = useState<'discography' | 'ranking'>('discography')
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [editingGenres, setEditingGenres] = useState(false)
+  const [genreInput, setGenreInput] = useState('')
+  const [localGenres, setLocalGenres] = useState<string[]>([])
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -276,6 +292,7 @@ export default function SpotlightPage() {
       .then((data) => {
         if (!data) return
         setSpotlight(data)
+        setLocalGenres(data.artist_genres ?? [])
         const sorted = [...(data.spotlight_albums ?? [])].sort(
           (a, b) => new Date(a.release_date).getTime() - new Date(b.release_date).getTime()
         )
@@ -283,6 +300,29 @@ export default function SpotlightPage() {
       })
       .finally(() => setLoading(false))
   }, [id])
+
+  const handleGenreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      const tag = genreInput.trim().replace(/,$/, '')
+      if (tag && !localGenres.includes(tag)) {
+        const updated = [...localGenres, tag]
+        setLocalGenres(updated)
+        updateSpotlightGenres(id, updated)
+      }
+      setGenreInput('')
+    } else if (e.key === 'Backspace' && genreInput === '' && localGenres.length > 0) {
+      const updated = localGenres.slice(0, -1)
+      setLocalGenres(updated)
+      updateSpotlightGenres(id, updated)
+    }
+  }
+
+  const removeGenre = (genre: string) => {
+    const updated = localGenres.filter((g) => g !== genre)
+    setLocalGenres(updated)
+    updateSpotlightGenres(id, updated)
+  }
 
   // Pre-generate album insights in the background once albums load
   useEffect(() => {
@@ -436,12 +476,52 @@ export default function SpotlightPage() {
             <div className="min-w-0 flex-1">
               <p className="text-xs text-orange-500/80 uppercase tracking-widest font-medium mb-1">Artist Spotlight</p>
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">{spotlight.artist_name}</h1>
-              {spotlight.artist_genres.length > 0 && (
-                <p className="text-xs text-zinc-600 uppercase tracking-widest mt-1">
-                  {spotlight.artist_genres.slice(0, 2).join(' · ')}
-                </p>
-              )}
-              <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-600">
+              {/* Genre tags — click the pencil to edit */}
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                {!editingGenres ? (
+                  <>
+                    {localGenres.slice(0, 3).map((g, i) => (
+                      <span key={g} className="inline-flex items-center gap-1.5">
+                        {i > 0 && <span className="text-zinc-700">·</span>}
+                        <span className="text-xs text-zinc-400 uppercase tracking-widest">{g}</span>
+                      </span>
+                    ))}
+                    <button
+                      onClick={() => setEditingGenres(true)}
+                      className="text-zinc-700 hover:text-zinc-400 transition-colors ml-1"
+                      title="Edit genres"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1 flex-wrap bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1 min-w-0">
+                    {localGenres.map((g) => (
+                      <span key={g} className="inline-flex items-center gap-1 text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-md">
+                        {g}
+                        <button onClick={() => removeGenre(g)} className="text-zinc-600 hover:text-red-400 transition-colors">
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      autoFocus
+                      type="text"
+                      value={genreInput}
+                      onChange={(e) => setGenreInput(e.target.value)}
+                      onKeyDown={handleGenreKeyDown}
+                      onBlur={() => setEditingGenres(false)}
+                      placeholder={localGenres.length === 0 ? 'Add genre…' : ''}
+                      className="text-xs text-white bg-transparent outline-none placeholder-zinc-600 min-w-16 w-20"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-zinc-400">
                 <span>{albums.length} albums</span>
                 {complete > 0 && <span className="text-orange-400 font-medium">{complete} complete</span>}
                 {listening > 0 && <span className="text-amber-400 font-medium">now listening</span>}
@@ -496,7 +576,7 @@ export default function SpotlightPage() {
 
         {/* Stats strip */}
         {albums.length > 0 && (
-          <div className="relative flex items-center gap-4 px-4 sm:px-6 pb-4 text-xs text-zinc-700 uppercase tracking-wider">
+          <div className="relative flex items-center gap-4 px-4 sm:px-6 pb-4 text-xs text-zinc-500 uppercase tracking-wider">
             <span>
               <span className="text-white font-medium normal-case">{complete}</span>/{albums.length} complete
             </span>
@@ -533,7 +613,7 @@ export default function SpotlightPage() {
             onClick={() => setTab(t)}
             className={cn(
               'flex-1 text-xs font-semibold py-1.5 rounded-lg transition-all uppercase tracking-widest',
-              tab === t ? 'bg-white/8 text-white' : 'text-zinc-700 hover:text-zinc-400'
+              tab === t ? 'bg-white/8 text-white' : 'text-zinc-500 hover:text-zinc-300'
             )}
           >
             {t}
@@ -556,7 +636,7 @@ export default function SpotlightPage() {
               <div className="flex justify-end mb-2">
                 <button
                   onClick={() => { setSelectMode((m) => !m); setSelectedIds(new Set()) }}
-                  className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                  className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
                 >
                   {selectMode ? 'Cancel' : 'Select'}
                 </button>

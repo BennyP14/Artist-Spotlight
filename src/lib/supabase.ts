@@ -79,6 +79,14 @@ export async function updateAlbumNotes(id: string, notes: string) {
   if (error) throw error
 }
 
+export async function updateSpotlightGenres(id: string, genres: string[]) {
+  const { error } = await supabase
+    .from('spotlights')
+    .update({ artist_genres: genres })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function updateAlbumRanks(updates: Array<{ id: string; rank_position: number | null }>) {
   await Promise.all(
     updates.map(({ id, rank_position }) =>

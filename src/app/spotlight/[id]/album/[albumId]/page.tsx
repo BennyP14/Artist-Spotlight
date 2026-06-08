@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getSpotlight, getAlbumInsights, updateAlbumStatus, updateAlbumNotes, updateAlbumVerdict, getTrackRatings, upsertTrackRating } from '@/lib/supabase'
 import type { SpotlightAlbum, AlbumInsights, SpotlightWithAlbums } from '@/types'
-import { cn, statusColor, statusLabel, appleMusicSearchUrl, formatDuration } from '@/lib/utils'
+import { cn, statusColor, statusLabel, appleMusicSearchUrl, spotifySearchUrl, formatDuration } from '@/lib/utils'
 
 interface Track {
   trackId: number
@@ -20,8 +20,8 @@ function InsightSection({ title, content }: { title: string; content: string }) 
   if (!content) return null
   return (
     <div>
-      <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">{title}</h3>
-      <div className="text-sm text-zinc-300 leading-relaxed space-y-3">
+      <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{title}</h3>
+      <div className="text-sm text-zinc-200 leading-relaxed space-y-3">
         {content.split('\n\n').map((para, i) => (
           <p key={i}>{para.trim()}</p>
         ))}
@@ -88,7 +88,7 @@ function InsightsPanel({
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-white">Insights</h2>
         {loading && (
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
             <div className="w-3.5 h-3.5 border border-zinc-700 border-t-orange-400 rounded-full animate-spin" />
             Generating…
           </div>
@@ -117,7 +117,7 @@ function InsightsPanel({
                 onClick={() => setTab(key)}
                 className={cn(
                   'flex-1 text-xs py-1.5 rounded-md transition-all font-medium',
-                  tab === key ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300'
+                  tab === key ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-zinc-200'
                 )}
               >
                 {label}
@@ -185,6 +185,7 @@ export default function AlbumPage() {
   // Silently prefetch all track insights — only after album insights are ready
   useEffect(() => {
     if (!tracks.length || !spotlight || !album || !insightsReady) return
+    const tracklistRef = tracks.map(t => ({ trackNumber: t.trackNumber, trackName: t.trackName }))
     const prefetch = async (track: Track) => {
       if (trackSummaries[track.trackId]) return
       try {
@@ -196,6 +197,8 @@ export default function AlbumPage() {
             trackName: track.trackName,
             albumName: album.album_name,
             releaseYear: album.release_year,
+            trackNumber: track.trackNumber,
+            tracklist: tracklistRef,
           }),
         })
         const contentType = res.headers.get('content-type') ?? ''
@@ -267,6 +270,8 @@ export default function AlbumPage() {
           trackName: track.trackName,
           albumName: album?.album_name,
           releaseYear: album?.release_year,
+          trackNumber: track.trackNumber,
+          tracklist: tracks.map(t => ({ trackNumber: t.trackNumber, trackName: t.trackName })),
         }),
       })
 
@@ -346,12 +351,12 @@ export default function AlbumPage() {
             <div className="w-30 h-30 rounded-xl bg-zinc-800 flex-shrink-0" />
           )}
           <div className="min-w-0">
-            <p className="text-xs text-zinc-500 uppercase tracking-wide capitalize">{album.album_type}</p>
+            <p className="text-xs text-zinc-400 uppercase tracking-wide capitalize">{album.album_type}</p>
             <h1 className="text-xl font-bold text-white mt-0.5 leading-tight">{album.album_name}</h1>
-            <p className="text-sm text-zinc-400 mt-1">
+            <p className="text-sm text-zinc-300 mt-1">
               {spotlight.artist_name} · {album.release_year}
             </p>
-            <p className="text-xs text-zinc-600 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               {album.total_tracks} tracks{totalDuration > 0 ? ` · ${formatDuration(totalDuration)}` : ''}
             </p>
 
@@ -372,17 +377,30 @@ export default function AlbumPage() {
           </div>
         </div>
 
-        <div className="px-5 pb-5">
+        <div className="px-5 pb-5 flex items-center gap-2">
           <a
             href={appleMusicSearchUrl(spotlight.artist_name, album.album_name)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors"
+            title="Find on Apple Music"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M23.997 6.124a9.23 9.23 0 0 0-.24-2.19c-.317-1.31-1.064-2.31-2.18-3.043a5.022 5.022 0 0 0-1.769-.73 7.7 7.7 0 0 0-1.114-.155c-.46-.014-.92-.013-1.38-.013H6.678c-.459 0-.918-.001-1.378.013a7.633 7.633 0 0 0-1.113.155 4.99 4.99 0 0 0-1.768.73C1.3 1.623.553 2.623.236 3.934A9.23 9.23 0 0 0 0 6.124c-.014.46-.013.92-.013 1.378v9.006c0 .459-.001.918.013 1.378.014.78.103 1.565.24 2.19.317 1.311 1.064 2.311 2.18 3.043a5.022 5.022 0 0 0 1.769.73c.37.083.744.13 1.114.155.46.014.92.013 1.38.013h10.16c.46 0 .92.001 1.38-.013a7.7 7.7 0 0 0 1.113-.155 4.99 4.99 0 0 0 1.768-.73c1.116-.732 1.863-1.732 2.18-3.043.138-.625.227-1.41.241-2.19.013-.46.013-.92.013-1.378V7.502c0-.459 0-.918-.013-1.378zM12 17.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11zm6.25-9.75a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
             </svg>
-            Find on Apple Music
+            Apple Music
+          </a>
+          <a
+            href={spotifySearchUrl(spotlight.artist_name, album.album_name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors"
+            title="Find on Spotify"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+            </svg>
+            Spotify
           </a>
         </div>
       </div>
@@ -393,7 +411,7 @@ export default function AlbumPage() {
       {/* Verdict + Notes */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
             Your Verdict
           </label>
           <input
@@ -406,7 +424,7 @@ export default function AlbumPage() {
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
             Notes
           </label>
           <textarea
@@ -417,7 +435,7 @@ export default function AlbumPage() {
             className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 resize-none transition-colors leading-relaxed"
           />
         </div>
-        <p className="text-xs text-zinc-700">Auto-saved</p>
+        <p className="text-xs text-zinc-500">Auto-saved</p>
       </div>
 
       {/* Tracklist with accordion insights */}
@@ -425,7 +443,7 @@ export default function AlbumPage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-white">Tracklist</h2>
-            <p className="text-xs text-zinc-600 uppercase tracking-widest">Tap for insights</p>
+            <p className="text-xs text-zinc-500 uppercase tracking-widest">Tap for insights</p>
           </div>
           <div className="space-y-0.5">
             {tracks.map((track) => {
@@ -442,7 +460,7 @@ export default function AlbumPage() {
                     )}
                     onClick={() => handleTrackExpand(track)}
                   >
-                    <span className="w-6 text-right text-xs text-zinc-600 flex-shrink-0">{track.trackNumber}</span>
+                    <span className="w-6 text-right text-xs text-zinc-500 flex-shrink-0">{track.trackNumber}</span>
                     <span className={cn('flex-1 text-sm truncate transition-colors', isExpanded ? 'text-orange-400' : 'text-zinc-300 group-hover:text-white')}>
                       {track.trackName}
                       {track.trackExplicitness === 'explicit' && (
@@ -467,7 +485,7 @@ export default function AlbumPage() {
                         ))}
                       </div>
                     )}
-                    <span className="text-xs text-zinc-600 flex-shrink-0 w-8 text-right">{formatDuration(track.trackTimeMillis)}</span>
+                    <span className="text-xs text-zinc-500 flex-shrink-0 w-8 text-right">{formatDuration(track.trackTimeMillis)}</span>
                     <svg className={cn('w-3 h-3 text-zinc-700 flex-shrink-0 transition-transform', isExpanded && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -482,7 +500,7 @@ export default function AlbumPage() {
                           <span className="text-xs text-zinc-600 uppercase tracking-widest">Generating insights…</span>
                         </div>
                       ) : summary ? (
-                        <div className="text-xs text-zinc-400 leading-relaxed space-y-2">
+                        <div className="text-xs text-zinc-300 leading-relaxed space-y-2">
                           {summary.split('\n\n').map((para, i) => (
                             <p key={i}>{para.trim()}</p>
                           ))}

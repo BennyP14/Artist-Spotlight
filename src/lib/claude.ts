@@ -16,22 +16,22 @@ export async function generateAlbumInsights(
     model: 'claude-haiku-4-5',
     max_tokens: 900,
     system:
-      'You are a knowledgeable music journalist. Write concise, engaging, factual insights. Be specific — mention real songs, producers, studios, collaborators where relevant.',
+      'You are a passionate music fan with deep knowledge. Write like you\'re enthusiastically sharing why an album matters with a friend who\'s about to listen for the first time — warm, personal, and specific. Mention real songs, producers, studios, collaborators. Be factual and engaging, never encyclopaedic.',
     messages: [
       {
         role: 'user',
-        content: `Provide three sections about "${albumName}" by ${artistName} (${releaseYear}).
+        content: `Write three sections about "${albumName}" by ${artistName} (${releaseYear}).
 
 ## Album Context
-1-2 paragraphs. What defines this album's sound, key tracks, and what it feels like to listen to?
+1-2 paragraphs. What does this album sound and feel like? What makes it special — key tracks, mood, sonic character?
 
 ## Era & Story
-1 paragraph. What was happening in ${artistName}'s career during this period? Notable recording details or breakthroughs?
+1 paragraph. What was going on in ${artistName}'s life and career when this was made? Any compelling recording stories or breakthroughs?
 
 ## Reception & Legacy
-1 paragraph. Critical/commercial reception and how it's regarded today.
+1 paragraph. How was it received and how is it remembered today? What's its place in the canon?
 
-Genres: ${genres.join(', ')}. Use the exact headers above (##). Be concise and human, not encyclopaedic.`,
+Genres: ${genres.join(', ')}. Use the exact headers above (##). Write with warmth and genuine enthusiasm — make the reader want to press play.`,
       },
     ],
   })

@@ -75,21 +75,31 @@ export default function NewSpotlightPage() {
     setCreatingName(artist.artistName)
     setError(null)
     try {
-      const [artistRes, wikiRes] = await Promise.all([
+      const [artistRes, wikiRes, lastfmRes] = await Promise.all([
         fetch(`/api/spotify/artist?id=${artist.artistId}`),
         fetch(`/api/wikipedia-image?name=${encodeURIComponent(artist.artistName)}`),
+        fetch(`/api/lastfm-genres?artist=${encodeURIComponent(artist.artistName)}`),
       ])
       const { albums } = await artistRes.json() as { albums: ItunesAlbum[] }
       const { url: wikiImageUrl } = await wikiRes.json()
+      const { genres: lastfmGenres } = await lastfmRes.json() as { genres: string[] }
 
       const artistImageUrl = wikiImageUrl
         ?? (albums[0]?.artworkUrl100 ? hqArtwork(albums[0].artworkUrl100) : null)
+
+      // Prefer Last.fm community tags (more accurate) — fall back to iTunes genre
+      const artistGenres =
+        lastfmGenres.length > 0
+          ? lastfmGenres
+          : artist.primaryGenreName
+          ? [artist.primaryGenreName]
+          : []
 
       const spotlight = await createSpotlight({
         artist_id: String(artist.artistId),
         artist_name: artist.artistName,
         artist_image_url: artistImageUrl,
-        artist_genres: artist.primaryGenreName ? [artist.primaryGenreName] : [],
+        artist_genres: artistGenres,
       })
 
       await bulkInsertAlbums(
