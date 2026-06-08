@@ -37,7 +37,10 @@ export async function getSpotlight(id: string): Promise<SpotlightWithAlbums | nu
     .select('*, spotlight_albums(*)')
     .eq('id', id)
     .single()
-  if (error) return null
+  if (error) {
+    console.error('[getSpotlight] error fetching spotlight', id, error)
+    return null
+  }
   return data
 }
 
