@@ -32,6 +32,7 @@ export type AlbumStatus = 'unlistened' | 'listening' | 'complete'
 
 export interface Spotlight {
   id: string
+  user_id: string | null
   artist_id: string
   artist_name: string
   artist_image_url: string | null

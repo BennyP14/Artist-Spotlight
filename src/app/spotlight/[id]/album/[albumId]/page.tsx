@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { getSpotlight, getAlbumInsights, updateAlbumStatus, updateAlbumNotes, updateAlbumVerdict, getTrackRatings, upsertTrackRating } from '@/lib/supabase'
 import type { SpotlightAlbum, AlbumInsights, SpotlightWithAlbums } from '@/types'
 import { cn, statusColor, statusLabel, appleMusicSearchUrl, spotifySearchUrl, formatDuration } from '@/lib/utils'
+import { useAuth } from '@/context/auth'
 
 interface Track {
   trackId: number
@@ -148,6 +149,7 @@ function InsightsPanel({
 
 export default function AlbumPage() {
   const { id: spotlightId, albumId } = useParams<{ id: string; albumId: string }>()
+  const { user } = useAuth()
   const [spotlight, setSpotlight] = useState<SpotlightWithAlbums | null>(null)
   const [album, setAlbum] = useState<SpotlightAlbum | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
@@ -231,11 +233,19 @@ export default function AlbumPage() {
     getTrackRatings(spotlightId, albumId).then(setTrackRatings)
   }, [spotlightId, albumId])
 
+  const isOwner = !!user && !!spotlight && user.id === spotlight.user_id
+
   const handleTrackRating = async (track: Track, rating: number) => {
+    if (!isOwner) return
     const newRating = trackRatings[String(track.trackId)] === rating ? 0 : rating
     setTrackRatings((prev) => ({ ...prev, [String(track.trackId)]: newRating }))
     if (newRating === 0) return
     await upsertTrackRating(spotlightId, albumId, String(track.trackId), track.trackName, newRating)
+    // Auto-advance to "listening" the first time a track is rated
+    if (album?.status === 'unlistened') {
+      await updateAlbumStatus(album.id, 'listening')
+      setAlbum((prev) => prev ? { ...prev, status: 'listening' } : prev)
+    }
   }
 
   const handleStatusChange = async (status: SpotlightAlbum['status']) => {
@@ -361,18 +371,24 @@ export default function AlbumPage() {
             </p>
 
             <div className="flex items-center gap-2 mt-3">
-              {(['unlistened', 'listening', 'complete'] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleStatusChange(s)}
-                  className={cn(
-                    'text-xs px-2.5 py-1 rounded-full font-medium transition-all',
-                    album.status === s ? statusColor(s) : 'text-zinc-600 hover:text-zinc-400'
-                  )}
-                >
-                  {statusLabel(s)}
-                </button>
-              ))}
+              {isOwner ? (
+                (['unlistened', 'listening', 'complete'] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleStatusChange(s)}
+                    className={cn(
+                      'text-xs px-2.5 py-1 rounded-full font-medium transition-all',
+                      album.status === s ? statusColor(s) : 'text-zinc-600 hover:text-zinc-400'
+                    )}
+                  >
+                    {statusLabel(s)}
+                  </button>
+                ))
+              ) : (
+                <span className={cn('text-xs px-2.5 py-1 rounded-full font-medium', statusColor(album.status))}>
+                  {statusLabel(album.status)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -412,30 +428,42 @@ export default function AlbumPage() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-4">
         <div>
           <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-            Your Verdict
+            {isOwner ? 'Your Verdict' : `${spotlight.artist_name} Verdict`}
           </label>
-          <input
-            type="text"
-            value={verdict}
-            onChange={(e) => handleVerdictChange(e.target.value)}
-            placeholder="One line — your definitive take on this album…"
-            maxLength={120}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition-colors"
-          />
+          {isOwner ? (
+            <input
+              type="text"
+              value={verdict}
+              onChange={(e) => handleVerdictChange(e.target.value)}
+              placeholder="One line — your definitive take on this album…"
+              maxLength={120}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500/50 transition-colors"
+            />
+          ) : verdict ? (
+            <p className="text-sm text-zinc-200 italic px-1">&ldquo;{verdict}&rdquo;</p>
+          ) : (
+            <p className="text-sm text-zinc-600 italic px-1">No verdict written yet</p>
+          )}
         </div>
         <div>
           <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
             Notes
           </label>
-          <textarea
-            value={notes}
-            onChange={(e) => handleNotesChange(e.target.value)}
-            placeholder="What stood out? Favourite tracks? How does it fit into the discography?…"
-            rows={5}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 resize-none transition-colors leading-relaxed"
-          />
+          {isOwner ? (
+            <textarea
+              value={notes}
+              onChange={(e) => handleNotesChange(e.target.value)}
+              placeholder="What stood out? Favourite tracks? How does it fit into the discography?…"
+              rows={5}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 resize-none transition-colors leading-relaxed"
+            />
+          ) : notes ? (
+            <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap px-1">{notes}</p>
+          ) : (
+            <p className="text-sm text-zinc-600 italic px-1">No notes written yet</p>
+          )}
         </div>
-        <p className="text-xs text-zinc-500">Auto-saved</p>
+        {isOwner && <p className="text-xs text-zinc-500">Auto-saved</p>}
       </div>
 
       {/* Tracklist with accordion insights */}
@@ -467,15 +495,17 @@ export default function AlbumPage() {
                         <span className="ml-2 text-xs text-zinc-600 bg-zinc-800 px-1 rounded">E</span>
                       )}
                     </span>
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={e => e.stopPropagation()}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button key={star} onClick={() => handleTrackRating(track, star)} className="p-0.5" title={`Rate ${star} star${star !== 1 ? 's' : ''}`}>
-                          <svg className={`w-3 h-3 transition-colors ${star <= rating ? 'text-amber-400' : 'text-zinc-700 hover:text-amber-400/50'}`} fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        </button>
-                      ))}
-                    </div>
+                    {isOwner && (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" onClick={e => e.stopPropagation()}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button key={star} onClick={() => handleTrackRating(track, star)} className="p-0.5" title={`Rate ${star} star${star !== 1 ? 's' : ''}`}>
+                            <svg className={`w-3 h-3 transition-colors ${star <= rating ? 'text-amber-400' : 'text-zinc-700 hover:text-amber-400/50'}`} fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {rating > 0 && (
                       <div className="flex items-center gap-0.5 group-hover:hidden flex-shrink-0" onClick={e => e.stopPropagation()}>
                         {[1, 2, 3, 4, 5].map((star) => (

@@ -30,9 +30,14 @@ export default function Comments({ spotlightId }: { spotlightId: string }) {
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Always load comments on mount so visitor can see existing ones
   useEffect(() => {
-    if (open) getComments(spotlightId).then((data) => setComments(data as Comment[]))
-  }, [open, spotlightId])
+    getComments(spotlightId).then((data) => {
+      const loaded = data as Comment[]
+      setComments(loaded)
+      if (loaded.length > 0) setOpen(true) // auto-expand when there's content to read
+    })
+  }, [spotlightId])
 
   const post = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,7 +64,7 @@ export default function Comments({ spotlightId }: { spotlightId: string }) {
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
-        {comments.length > 0 || open ? `${comments.length} comments` : 'Add comment'}
+        {comments.length > 0 ? `${comments.length} comment${comments.length !== 1 ? 's' : ''}` : 'Add comment'}
       </button>
 
       {open && (
