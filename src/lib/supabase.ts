@@ -227,6 +227,22 @@ export async function getFollowingCount(userId: string): Promise<number> {
   return count ?? 0
 }
 
+export async function getFollowing(): Promise<{ id: string; username: string; display_name: string; avatar_url: string | null }[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data: follows } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', user.id)
+  if (!follows?.length) return []
+  const ids = follows.map((f) => f.following_id)
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url')
+    .in('id', ids)
+  return (data ?? []) as { id: string; username: string; display_name: string; avatar_url: string | null }[]
+}
+
 export interface ActivityEvent {
   id: string
   user_id: string

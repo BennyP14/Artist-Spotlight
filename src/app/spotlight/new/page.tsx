@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createSpotlight, bulkInsertAlbums } from '@/lib/supabase'
+import { createSpotlight, bulkInsertAlbums, logActivity } from '@/lib/supabase'
 import { hqArtwork } from '@/lib/itunes'
 import type { ItunesArtist, ItunesAlbum } from '@/lib/itunes'
 
@@ -123,6 +123,7 @@ export default function NewSpotlightPage() {
         }))
       )
 
+      await logActivity({ event_type: 'spotlight_created', spotlight_id: spotlight.id, artist_name: artist.artistName })
       router.push(`/spotlight/${spotlight.id}`)
     } catch (err) {
       console.error(err)

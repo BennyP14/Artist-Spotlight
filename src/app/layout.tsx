@@ -3,6 +3,7 @@ import { DM_Sans } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/context/auth'
 import NavUser from '@/components/NavUser'
+import { DesktopNav, MobileNav } from '@/components/NavLinks'
 
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700'] })
 
@@ -29,31 +30,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${dmSans.className} bg-[#0c0a08] text-white min-h-screen`}>
         <AuthProvider>
-          <nav className="border-b border-white/5 px-4 py-3 flex items-center gap-4">
-            <a href="/" className="flex items-center gap-2 group">
-              <div className="w-7 h-7 rounded-md bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center flex-shrink-0 shadow-[0_0_14px_rgba(249,115,22,0.4)]">
+          <nav className="border-b border-white/8 bg-[#0c0a08]/80 backdrop-blur-md sticky top-0 z-40 px-4 py-2.5 flex items-center gap-3">
+            <a href="/" className="flex items-center gap-2 group flex-shrink-0">
+              <div className="w-7 h-7 rounded-md bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-[0_0_14px_rgba(249,115,22,0.4)]">
                 <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
                 </svg>
               </div>
-              <span className="font-semibold text-sm tracking-wide group-hover:text-orange-400 transition-colors">
+              <span className="font-bold text-sm tracking-tight group-hover:text-orange-400 transition-colors hidden sm:block">
                 Artist Spotlight
               </span>
             </a>
-            <a href="/feed" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium hidden sm:block">
-              Feed
-            </a>
-            <a href="/people" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium hidden sm:block">
-              Friends
-            </a>
-            <a href="/rankings" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium hidden sm:block">
-              Rankings
-            </a>
+
+            <div className="w-px h-4 bg-white/10 hidden sm:block" />
+            <DesktopNav />
+
             <div className="ml-auto flex items-center gap-3">
               <NavUser />
             </div>
           </nav>
-          <main className="max-w-5xl mx-auto px-4 py-6">{children}</main>
+          <main className="max-w-5xl mx-auto px-4 py-6 pb-24 sm:pb-6">{children}</main>
+          <MobileNav />
         </AuthProvider>
       </body>
     </html>

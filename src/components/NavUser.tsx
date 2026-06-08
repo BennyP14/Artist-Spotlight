@@ -17,7 +17,7 @@ export default function NavUser() {
     return (
       <Link
         href="/auth/signin"
-        className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors uppercase tracking-widest font-medium"
+        className="text-xs text-zinc-300 hover:text-white transition-colors uppercase tracking-widest font-medium"
       >
         Sign in
       </Link>
