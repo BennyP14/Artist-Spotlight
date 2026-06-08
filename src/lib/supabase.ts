@@ -123,13 +123,16 @@ export async function deleteSpotlight(id: string) {
 
 export async function getTrackRatings(
   spotlightId: string,
-  albumId: string
+  albumId: string,
+  userId?: string // if provided, fetch that specific user's ratings (for viewing friends)
 ): Promise<Record<string, number>> {
-  const { data } = await supabase
+  let query = supabase
     .from('track_ratings')
     .select('track_id, rating')
     .eq('spotlight_id', spotlightId)
     .eq('album_id', albumId)
+  if (userId) query = query.eq('user_id', userId)
+  const { data } = await query
   const map: Record<string, number> = {}
   for (const row of data ?? []) map[row.track_id] = row.rating
   return map
@@ -142,9 +145,11 @@ export async function upsertTrackRating(
   trackName: string,
   rating: number
 ) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
   const { error } = await supabase.from('track_ratings').upsert(
-    { spotlight_id: spotlightId, album_id: albumId, track_id: trackId, track_name: trackName, rating },
-    { onConflict: 'spotlight_id,album_id,track_id' }
+    { user_id: user.id, spotlight_id: spotlightId, album_id: albumId, track_id: trackId, track_name: trackName, rating },
+    { onConflict: 'user_id,spotlight_id,album_id,track_id' }
   )
   if (error) throw error
 }
