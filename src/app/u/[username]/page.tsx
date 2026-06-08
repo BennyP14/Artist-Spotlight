@@ -142,7 +142,7 @@ export default function ProfilePage() {
                   )}
                   <div className="flex gap-2 mt-3">
                     <Link
-                      href={`/shared/${s.id}`}
+                      href={`/spotlight/${s.id}`}
                       className="flex-1 text-center text-xs py-1.5 bg-white/5 hover:bg-white/8 border border-white/5 rounded-lg text-zinc-400 hover:text-white transition-colors"
                     >
                       View
