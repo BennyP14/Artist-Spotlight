@@ -39,7 +39,7 @@ function SpotlightCard({
 
   return (
     <div className="group relative bg-[#110e0b] border border-white/5 rounded-2xl overflow-hidden hover:border-orange-500/20 transition-all hover:shadow-xl hover:shadow-orange-900/10">
-      {/* Clickable card body */}
+      {/* Image section — its own link so no button-inside-anchor issue */}
       <Link href={`/spotlight/${spotlight.id}`} className="block">
         {spotlight.artist_image_url && (
           <div className="relative h-36 overflow-hidden">
@@ -52,31 +52,38 @@ function SpotlightCard({
             )}
           </div>
         )}
-        <div className="p-4">
-          <h3 className="font-semibold text-base text-white tracking-tight">{spotlight.artist_name}</h3>
-          <p className="text-xs text-zinc-400 mt-0.5 uppercase tracking-widest">{spotlight.artist_genres?.[0] ?? ''}</p>
-          <div className="mt-2.5 flex items-center gap-3 text-xs">
-            <span className="text-zinc-400">{total} albums</span>
-            {complete > 0 && <span className="text-orange-400 font-medium">{complete} done</span>}
-          </div>
-          {total > 0 && (
-            <div className="mt-2.5 h-px bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all" style={{ width: `${(complete / total) * 100}%` }} />
-            </div>
-          )}
-        </div>
       </Link>
 
-      {/* Step 1 — trash icon, visible on hover */}
-      {!confirming && (
-        <button
-          onClick={(e) => { e.preventDefault(); onDeleteRequest() }}
-          className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-black/60 backdrop-blur-sm rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10"
-          title="Delete spotlight"
-        >
-          <TrashIcon />
-        </button>
-      )}
+      {/* Text section — artist info + trash button side by side */}
+      <div className="p-4">
+        <div className="flex items-start gap-2">
+          {/* Left: clickable artist info */}
+          <Link href={`/spotlight/${spotlight.id}`} className="flex-1 min-w-0 block">
+            <h3 className="font-semibold text-base text-white tracking-tight truncate">{spotlight.artist_name}</h3>
+            <p className="text-xs text-zinc-400 mt-0.5 uppercase tracking-widest truncate">{spotlight.artist_genres?.[0] ?? ''}</p>
+            <div className="mt-2.5 flex items-center gap-3 text-xs">
+              <span className="text-zinc-400">{total} albums</span>
+              {complete > 0 && <span className="text-orange-400 font-medium">{complete} done</span>}
+            </div>
+            {total > 0 && (
+              <div className="mt-2.5 h-px bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full transition-all" style={{ width: `${(complete / total) * 100}%` }} />
+              </div>
+            )}
+          </Link>
+
+          {/* Right: trash button — always visible, very subtle until hovered */}
+          {!confirming && (
+            <button
+              onClick={onDeleteRequest}
+              className="flex-shrink-0 mt-0.5 p-1 rounded-md text-zinc-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Delete spotlight"
+            >
+              <TrashIcon />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Step 2 — confirmation overlay */}
       {confirming && (
@@ -363,10 +370,10 @@ function Dashboard() {
                     </div>
                   </div>
                 </Link>
-                {/* Step 1 — trash icon, visible on hover */}
+                {/* Trash button — always visible, subtle until hovered */}
                 <button
                   onClick={() => setConfirmingId(s.id)}
-                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                  className="flex-shrink-0 p-1.5 rounded-lg text-zinc-700 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   title="Delete spotlight"
                 >
                   <TrashIcon />
