@@ -51,7 +51,7 @@ function SortableAlbumRow({ album, position }: { album: GlobalAlbum; position: n
       {/* Position number */}
       <span className={cn(
         'w-7 text-center font-bold flex-shrink-0 text-base',
-        position === 1 ? 'text-amber-400' : position === 2 ? 'text-zinc-400' : position === 3 ? 'text-orange-700' : 'text-zinc-800'
+        position === 1 ? 'text-amber-400' : position === 2 ? 'text-zinc-300' : position === 3 ? 'text-orange-500' : 'text-zinc-500'
       )}>
         {position}
       </span>
@@ -74,10 +74,10 @@ function SortableAlbumRow({ album, position }: { album: GlobalAlbum; position: n
           {album.artist_image_url && (
             <Image src={album.artist_image_url} alt={album.artist_name} width={14} height={14} className="rounded-sm flex-shrink-0 opacity-60" />
           )}
-          <p className="text-xs text-zinc-600 uppercase tracking-widest truncate">{album.artist_name} · {album.release_year}</p>
+          <p className="text-xs text-zinc-400 uppercase tracking-widest truncate">{album.artist_name} · {album.release_year}</p>
         </div>
         {album.verdict && (
-          <p className="text-xs text-zinc-500 italic mt-0.5 truncate">&ldquo;{album.verdict}&rdquo;</p>
+          <p className="text-xs text-zinc-400 italic mt-0.5 truncate">&ldquo;{album.verdict}&rdquo;</p>
         )}
       </div>
 
@@ -146,7 +146,7 @@ export default function RankingsPage() {
 
   if (!user && !authLoading) return (
     <div className="text-center py-24">
-      <p className="text-zinc-600 text-sm uppercase tracking-widest mb-4">Sign in to see your rankings</p>
+      <p className="text-zinc-400 text-sm uppercase tracking-widest mb-4">Sign in to see your rankings</p>
       <Link href="/auth/signin" className="text-xs bg-orange-500 hover:bg-orange-400 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors tracking-wide">
         Sign in
       </Link>
@@ -158,7 +158,7 @@ export default function RankingsPage() {
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">All-Time Rankings</h1>
-          <p className="text-xs text-zinc-600 uppercase tracking-widest mt-1">Your best albums across every spotlight</p>
+          <p className="text-xs text-zinc-400 uppercase tracking-widest mt-1">Your best albums across every spotlight</p>
         </div>
         <button
           onClick={autoRank}
@@ -191,8 +191,8 @@ export default function RankingsPage() {
         </div>
       ) : albums.length === 0 && unranked.length === 0 ? (
         <div className="text-center py-20 bg-[#110e0b] border border-white/5 rounded-2xl">
-          <p className="text-zinc-500 font-medium mb-2">No completed albums yet</p>
-          <p className="text-zinc-700 text-sm mb-4">Mark albums as complete in your spotlights, then hit Auto-rank</p>
+          <p className="text-zinc-200 font-medium mb-2">No completed albums yet</p>
+          <p className="text-zinc-400 text-sm mb-4">Mark albums as complete in your spotlights, then hit Auto-rank</p>
           <Link href="/" className="text-xs text-orange-400 hover:text-orange-300 uppercase tracking-widest">← Your spotlights</Link>
         </div>
       ) : (
@@ -200,7 +200,7 @@ export default function RankingsPage() {
           {/* Ranked list */}
           {albums.length > 0 && (
             <>
-              <p className="text-xs text-zinc-700 uppercase tracking-widest mb-3">Drag to reorder · Score from track ratings + verdict</p>
+              <p className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Drag to reorder · Score from track ratings + verdict</p>
               <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd} sensors={sensors}>
                 <SortableContext items={albums.map(a => a.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-2">
@@ -217,7 +217,7 @@ export default function RankingsPage() {
           {unranked.length > 0 && (
             <div className="mt-8">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-zinc-700 uppercase tracking-widest">Completed but not yet ranked</p>
+                <p className="text-xs text-zinc-400 uppercase tracking-widest">Completed but not yet ranked</p>
                 <button
                   onClick={autoRank}
                   disabled={autoRanking}
@@ -229,11 +229,11 @@ export default function RankingsPage() {
               <div className="space-y-2 opacity-50">
                 {unranked.map(album => (
                   <div key={album.id} className="flex items-center gap-3 p-3 bg-[#110e0b] border border-white/5 rounded-xl">
-                    <span className="w-7 text-center text-zinc-800 font-bold text-base">—</span>
+                    <span className="w-7 text-center text-zinc-500 font-bold text-base">—</span>
                     {album.image_url && <Image src={album.image_url} alt={album.album_name} width={44} height={44} className="rounded-md flex-shrink-0" />}
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm text-white truncate">{album.album_name}</p>
-                      <p className="text-xs text-zinc-600 uppercase tracking-widest mt-0.5">{album.artist_name} · {album.release_year}</p>
+                      <p className="text-xs text-zinc-400 uppercase tracking-widest mt-0.5">{album.artist_name} · {album.release_year}</p>
                     </div>
                   </div>
                 ))}

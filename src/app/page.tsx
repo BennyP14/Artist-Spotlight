@@ -31,9 +31,9 @@ function SpotlightCard({ spotlight }: { spotlight: Spotlight & { spotlight_album
         )}
         <div className="p-4">
           <h3 className="font-semibold text-base text-white tracking-tight">{spotlight.artist_name}</h3>
-          <p className="text-xs text-zinc-600 mt-0.5 uppercase tracking-widest">{spotlight.artist_genres?.[0] ?? ''}</p>
+          <p className="text-xs text-zinc-400 mt-0.5 uppercase tracking-widest">{spotlight.artist_genres?.[0] ?? ''}</p>
           <div className="mt-2.5 flex items-center gap-3 text-xs">
-            <span className="text-zinc-600">{total} albums</span>
+            <span className="text-zinc-400">{total} albums</span>
             {complete > 0 && <span className="text-orange-400 font-medium">{complete} done</span>}
           </div>
           {total > 0 && (
@@ -65,7 +65,7 @@ function LandingPage() {
           </svg>
         </div>
         <h1 className="text-3xl font-bold tracking-tight mb-3">Artist Spotlight</h1>
-        <p className="text-zinc-500 text-base max-w-md mx-auto leading-relaxed">
+        <p className="text-zinc-300 text-base max-w-md mx-auto leading-relaxed">
           Deep-dive into an artist&apos;s entire discography, track by track — then build your definitive album ranking.
         </p>
         <div className="flex items-center justify-center gap-3 mt-7">
@@ -76,7 +76,7 @@ function LandingPage() {
             Sign in
           </Link>
         </div>
-        <p className="text-zinc-700 text-xs mt-3 uppercase tracking-widest">No subscription · No password needed</p>
+        <p className="text-zinc-500 text-xs mt-3 uppercase tracking-widest">No subscription · No password needed</p>
       </div>
 
       {/* How it works */}
@@ -85,14 +85,14 @@ function LandingPage() {
           <div key={i} className="bg-[#110e0b] border border-white/5 rounded-2xl p-5">
             <div className="text-2xl mb-3">{step.icon}</div>
             <h3 className="font-semibold text-white text-sm mb-1.5">{step.title}</h3>
-            <p className="text-zinc-600 text-xs leading-relaxed">{step.desc}</p>
+            <p className="text-zinc-300 text-xs leading-relaxed">{step.desc}</p>
           </div>
         ))}
       </div>
 
       {/* Social proof features */}
       <div className="bg-[#110e0b] border border-white/5 rounded-2xl p-6">
-        <p className="text-xs text-zinc-600 uppercase tracking-widest mb-4">Also includes</p>
+        <p className="text-xs text-zinc-400 uppercase tracking-widest mb-4">Also includes</p>
         <div className="grid grid-cols-2 gap-3">
           {[
             ['🔥', 'React to friends\' rankings'],
@@ -100,7 +100,7 @@ function LandingPage() {
             ['🆚', 'Compare rankings side-by-side'],
             ['📊', 'Activity feed from friends'],
           ].map(([emoji, label]) => (
-            <div key={label} className="flex items-center gap-2 text-sm text-zinc-500">
+            <div key={label} className="flex items-center gap-2 text-sm text-zinc-300">
               <span>{emoji}</span><span>{label}</span>
             </div>
           ))}
@@ -169,7 +169,7 @@ function Dashboard() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Your Spotlights</h1>
-          <p className="text-zinc-600 text-xs mt-1 uppercase tracking-widest">{spotlights.length} artist{spotlights.length !== 1 ? 's' : ''}</p>
+          <p className="text-zinc-400 text-xs mt-1 uppercase tracking-widest">{spotlights.length} artist{spotlights.length !== 1 ? 's' : ''}</p>
         </div>
         <Link href="/spotlight/new" className="text-xs bg-orange-500 hover:bg-orange-400 text-white font-semibold px-4 py-2 rounded-lg transition-colors tracking-wide shadow-[0_4px_14px_rgba(249,115,22,0.25)]">
           + New
@@ -206,10 +206,10 @@ function Dashboard() {
 
           {/* View toggle */}
           <div className="flex gap-1 bg-[#110e0b] border border-white/5 rounded-lg p-1">
-            <button onClick={() => setView('grid')} className={`p-1.5 rounded ${view === 'grid' ? 'bg-white/10 text-white' : 'text-zinc-600'}`}>
+            <button onClick={() => setView('grid')} className={`p-1.5 rounded ${view === 'grid' ? 'bg-white/10 text-white' : 'text-zinc-400'}`}>
               <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M1 2.5A1.5 1.5 0 012.5 1h3A1.5 1.5 0 017 2.5v3A1.5 1.5 0 015.5 7h-3A1.5 1.5 0 011 5.5v-3zm8 0A1.5 1.5 0 0110.5 1h3A1.5 1.5 0 0115 2.5v3A1.5 1.5 0 0113.5 7h-3A1.5 1.5 0 019 5.5v-3zm-8 8A1.5 1.5 0 012.5 9h3A1.5 1.5 0 017 10.5v3A1.5 1.5 0 015.5 15h-3A1.5 1.5 0 011 13.5v-3zm8 0A1.5 1.5 0 0110.5 9h3A1.5 1.5 0 0115 10.5v3A1.5 1.5 0 0113.5 15h-3A1.5 1.5 0 019 13.5v-3z"/></svg>
             </button>
-            <button onClick={() => setView('list')} className={`p-1.5 rounded ${view === 'list' ? 'bg-white/10 text-white' : 'text-zinc-600'}`}>
+            <button onClick={() => setView('list')} className={`p-1.5 rounded ${view === 'list' ? 'bg-white/10 text-white' : 'text-zinc-400'}`}>
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
           </div>
@@ -217,11 +217,11 @@ function Dashboard() {
       )}
 
       {filtered.length === 0 && search ? (
-        <p className="text-center text-zinc-700 py-12 text-sm uppercase tracking-widest">No artists match &ldquo;{search}&rdquo;</p>
+        <p className="text-center text-zinc-400 py-12 text-sm uppercase tracking-widest">No artists match &ldquo;{search}&rdquo;</p>
       ) : spotlights.length === 0 ? (
         <div className="text-center py-16 bg-[#110e0b] border border-white/5 rounded-2xl">
-          <p className="text-zinc-500 font-medium mb-1">No spotlights yet</p>
-          <p className="text-zinc-700 text-sm mb-5">Search for an artist to begin your first deep-dive</p>
+          <p className="text-zinc-200 font-medium mb-1">No spotlights yet</p>
+          <p className="text-zinc-400 text-sm mb-5">Search for an artist to begin your first deep-dive</p>
           <Link href="/spotlight/new" className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-[0_4px_20px_rgba(249,115,22,0.3)] tracking-wide text-sm">
             Start your first spotlight
           </Link>
@@ -244,11 +244,11 @@ function Dashboard() {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm text-white group-hover:text-orange-400 transition-colors truncate">{s.artist_name}</p>
-                    <p className="text-xs text-zinc-600 uppercase tracking-widest">{s.artist_genres?.[0] ?? ''}</p>
+                    <p className="text-xs text-zinc-400 uppercase tracking-widest">{s.artist_genres?.[0] ?? ''}</p>
                   </div>
                   <div className="flex items-center gap-3 text-xs flex-shrink-0">
                     {listening && <span className="text-amber-400 font-medium">Listening</span>}
-                    <span className="text-zinc-600">{complete}/{total}</span>
+                    <span className="text-zinc-400">{complete}/{total}</span>
                     <div className="w-16 h-px bg-white/5 rounded-full overflow-hidden">
                       <div className="h-full bg-orange-500 rounded-full" style={{ width: `${total ? (complete / total) * 100 : 0}%` }} />
                     </div>

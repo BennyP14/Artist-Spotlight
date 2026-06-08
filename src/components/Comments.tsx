@@ -54,7 +54,7 @@ export default function Comments({ spotlightId }: { spotlightId: string }) {
     <div>
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 text-xs text-zinc-600 hover:text-zinc-400 transition-colors uppercase tracking-widest"
+        className="flex items-center gap-2 text-xs text-zinc-400 hover:text-zinc-200 transition-colors uppercase tracking-widest"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -72,9 +72,9 @@ export default function Comments({ spotlightId }: { spotlightId: string }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-xs font-semibold text-zinc-300">{c.profiles.display_name}</span>
-                  <span className="text-xs text-zinc-700 uppercase tracking-wider">{timeAgo(c.created_at)}</span>
+                  <span className="text-xs text-zinc-400 uppercase tracking-wider">{timeAgo(c.created_at)}</span>
                 </div>
-                <p className="text-sm text-zinc-400 mt-0.5">{c.content}</p>
+                <p className="text-sm text-zinc-300 mt-0.5">{c.content}</p>
               </div>
             </div>
           ))}
@@ -97,7 +97,7 @@ export default function Comments({ spotlightId }: { spotlightId: string }) {
               </button>
             </form>
           ) : (
-            <p className="text-xs text-zinc-700 uppercase tracking-widest">Sign in to comment</p>
+            <p className="text-xs text-zinc-400 uppercase tracking-widest">Sign in to comment</p>
           )}
         </div>
       )}

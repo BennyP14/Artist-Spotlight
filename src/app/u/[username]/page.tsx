@@ -90,9 +90,9 @@ export default function ProfilePage() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold tracking-tight">{profile.display_name}</h1>
-            <p className="text-xs text-zinc-600 uppercase tracking-widest mt-0.5">@{profile.username}</p>
-            {profile.bio && <p className="text-sm text-zinc-400 mt-2">{profile.bio}</p>}
-            <div className="flex gap-5 mt-3 text-xs text-zinc-600">
+            <p className="text-xs text-zinc-400 uppercase tracking-widest mt-0.5">@{profile.username}</p>
+            {profile.bio && <p className="text-sm text-zinc-300 mt-2">{profile.bio}</p>}
+            <div className="flex gap-5 mt-3 text-xs text-zinc-400">
               <span><span className="text-white font-semibold">{spotlights.length}</span> spotlights</span>
               <span><span className="text-white font-semibold">{complete}</span> albums complete</span>
               <span><span className="text-white font-semibold">{followers}</span> followers</span>
@@ -116,9 +116,9 @@ export default function ProfilePage() {
       </div>
 
       {/* Spotlights grid */}
-      <h2 className="text-xs text-zinc-600 uppercase tracking-widest mb-3">Spotlights</h2>
+      <h2 className="text-xs text-zinc-400 uppercase tracking-widest mb-3">Spotlights</h2>
       {spotlights.length === 0 ? (
-        <p className="text-center text-zinc-700 py-12 text-sm uppercase tracking-widest">No spotlights yet</p>
+        <p className="text-center text-zinc-400 py-12 text-sm uppercase tracking-widest">No spotlights yet</p>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {spotlights.map((s) => {
@@ -134,7 +134,7 @@ export default function ProfilePage() {
                 )}
                 <div className="p-3">
                   <p className="font-semibold text-sm tracking-tight">{s.artist_name}</p>
-                  <p className="text-xs text-zinc-600 uppercase tracking-widest mt-0.5">{done}/{total} complete</p>
+                  <p className="text-xs text-zinc-400 uppercase tracking-widest mt-0.5">{done}/{total} complete</p>
                   {total > 0 && (
                     <div className="mt-2 h-px bg-white/5 rounded-full overflow-hidden">
                       <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full" style={{ width: `${(done / total) * 100}%` }} />

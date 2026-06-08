@@ -51,7 +51,7 @@ export default function NavUser() {
           <div className="absolute right-0 top-9 z-50 w-48 bg-[#1a1510] border border-white/8 rounded-xl shadow-2xl shadow-black/60 py-1 overflow-hidden">
             <div className="px-3 py-2 border-b border-white/5">
               <p className="text-xs font-medium text-white truncate">{profile?.display_name ?? user.email}</p>
-              <p className="text-xs text-zinc-600 truncate">@{profile?.username}</p>
+              <p className="text-xs text-zinc-400 truncate">@{profile?.username}</p>
             </div>
             <Link href={`/u/${profile?.username}`} onClick={() => setOpen(false)}
               className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors">

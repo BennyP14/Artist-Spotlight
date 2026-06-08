@@ -29,7 +29,7 @@ function ArtistCard({
       <div className="min-w-0">
         <p className="font-semibold text-white truncate tracking-tight">{artist.artistName}</p>
         {artist.primaryGenreName && (
-          <p className="text-xs text-zinc-600 uppercase tracking-widest truncate mt-0.5">{artist.primaryGenreName}</p>
+          <p className="text-xs text-zinc-400 uppercase tracking-widest truncate mt-0.5">{artist.primaryGenreName}</p>
         )}
       </div>
       <svg className="w-4 h-4 text-zinc-700 ml-auto flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@ export default function NewSpotlightPage() {
     <div className="max-w-xl mx-auto animate-fade-in">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight">New Spotlight</h1>
-        <p className="text-zinc-600 text-sm mt-1 uppercase tracking-widest">Search for an artist to begin</p>
+        <p className="text-zinc-400 text-sm mt-1 uppercase tracking-widest">Search for an artist to begin</p>
       </div>
 
       <div className="relative">
@@ -171,7 +171,7 @@ export default function NewSpotlightPage() {
       {creating && (
         <div className="mt-8 text-center py-12">
           <div className="w-10 h-10 border-2 border-white/5 border-t-orange-400 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-zinc-600 text-sm uppercase tracking-widest">Loading {creatingName}&apos;s discography…</p>
+          <p className="text-zinc-400 text-sm uppercase tracking-widest">Loading {creatingName}&apos;s discography…</p>
         </div>
       )}
 
@@ -184,7 +184,7 @@ export default function NewSpotlightPage() {
       )}
 
       {!creating && !searching && query.length >= 2 && artists.length === 0 && (
-        <p className="mt-6 text-center text-zinc-700 text-sm uppercase tracking-widest">No artists found for &ldquo;{query}&rdquo;</p>
+        <p className="mt-6 text-center text-zinc-400 text-sm uppercase tracking-widest">No artists found for &ldquo;{query}&rdquo;</p>
       )}
     </div>
   )

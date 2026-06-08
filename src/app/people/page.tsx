@@ -59,12 +59,12 @@ export default function PeoplePage() {
     <div className="max-w-xl mx-auto animate-fade-in">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">Find Friends</h1>
-        <p className="text-zinc-600 text-xs uppercase tracking-widest mt-1">Search by name or username</p>
+        <p className="text-zinc-400 text-xs uppercase tracking-widest mt-1">Search by name or username</p>
       </div>
 
       {!user ? (
         <div className="text-center py-16 bg-[#110e0b] border border-white/5 rounded-2xl">
-          <p className="text-zinc-500 mb-3">Sign in to find and follow friends</p>
+          <p className="text-zinc-300 mb-3">Sign in to find and follow friends</p>
           <Link href="/auth/signin" className="text-xs bg-orange-500 text-white font-semibold px-4 py-2 rounded-lg tracking-wide">Sign in</Link>
         </div>
       ) : (
@@ -106,7 +106,7 @@ export default function PeoplePage() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-medium text-sm text-white truncate">{person.display_name}</p>
-                      <p className="text-xs text-zinc-600 uppercase tracking-widest">@{person.username}</p>
+                      <p className="text-xs text-zinc-400 uppercase tracking-widest">@{person.username}</p>
                     </div>
                   </Link>
                   <button
@@ -123,9 +123,9 @@ export default function PeoplePage() {
               ))}
             </div>
           ) : query.length >= 2 && !searching ? (
-            <p className="text-center text-zinc-700 py-10 text-sm uppercase tracking-widest">No users found for &ldquo;{query}&rdquo;</p>
+            <p className="text-center text-zinc-400 py-10 text-sm uppercase tracking-widest">No users found for &ldquo;{query}&rdquo;</p>
           ) : query.length === 0 ? (
-            <div className="text-center py-10 text-zinc-700">
+            <div className="text-center py-10 text-zinc-400">
               <p className="text-sm">Type a name or username to search</p>
               <p className="text-xs mt-1 uppercase tracking-widest">Once you follow someone, their activity appears in your feed</p>
             </div>
