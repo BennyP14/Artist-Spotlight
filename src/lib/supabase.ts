@@ -115,6 +115,12 @@ export async function removeAlbumFromSpotlight(id: string) {
   if (error) throw error
 }
 
+export async function deleteSpotlight(id: string) {
+  // spotlight_albums and related rows cascade-delete via FK
+  const { error } = await supabase.from('spotlights').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function getTrackRatings(
   spotlightId: string,
   albumId: string

@@ -3,21 +3,44 @@
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getSpotlights } from '@/lib/supabase'
+import { getSpotlights, deleteSpotlight } from '@/lib/supabase'
 import { useAuth } from '@/context/auth'
 import type { Spotlight } from '@/types'
 
 type SortOption = 'recent' | 'az' | 'progress' | 'active'
 
-function SpotlightCard({ spotlight }: { spotlight: Spotlight & { spotlight_albums?: { status: string }[] } }) {
+function TrashIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  )
+}
+
+function SpotlightCard({
+  spotlight,
+  confirming,
+  deleting,
+  onDeleteRequest,
+  onDeleteConfirm,
+  onDeleteCancel,
+}: {
+  spotlight: Spotlight & { spotlight_albums?: { status: string }[] }
+  confirming: boolean
+  deleting: boolean
+  onDeleteRequest: () => void
+  onDeleteConfirm: () => void
+  onDeleteCancel: () => void
+}) {
   const albums = spotlight.spotlight_albums ?? []
   const total = albums.length
   const complete = albums.filter((a) => a.status === 'complete').length
   const listening = albums.filter((a) => a.status === 'listening').length
 
   return (
-    <Link href={`/spotlight/${spotlight.id}`}>
-      <div className="group relative bg-[#110e0b] border border-white/5 rounded-2xl overflow-hidden hover:border-orange-500/20 transition-all hover:shadow-xl hover:shadow-orange-900/10">
+    <div className="group relative bg-[#110e0b] border border-white/5 rounded-2xl overflow-hidden hover:border-orange-500/20 transition-all hover:shadow-xl hover:shadow-orange-900/10">
+      {/* Clickable card body */}
+      <Link href={`/spotlight/${spotlight.id}`} className="block">
         {spotlight.artist_image_url && (
           <div className="relative h-36 overflow-hidden">
             <Image src={spotlight.artist_image_url} alt={spotlight.artist_name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -42,8 +65,42 @@ function SpotlightCard({ spotlight }: { spotlight: Spotlight & { spotlight_album
             </div>
           )}
         </div>
-      </div>
-    </Link>
+      </Link>
+
+      {/* Step 1 — trash icon, visible on hover */}
+      {!confirming && (
+        <button
+          onClick={(e) => { e.preventDefault(); onDeleteRequest() }}
+          className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 bg-black/60 backdrop-blur-sm rounded-lg text-zinc-400 hover:text-red-400 hover:bg-red-500/10"
+          title="Delete spotlight"
+        >
+          <TrashIcon />
+        </button>
+      )}
+
+      {/* Step 2 — confirmation overlay */}
+      {confirming && (
+        <div className="absolute inset-0 z-20 bg-[#110e0b]/96 backdrop-blur-sm flex flex-col items-center justify-center gap-3 p-5">
+          <p className="text-sm font-semibold text-white text-center">Delete {spotlight.artist_name}?</p>
+          <p className="text-xs text-zinc-400 text-center">All albums, ratings and notes will be removed.</p>
+          <div className="flex gap-2 w-full mt-1">
+            <button
+              onClick={onDeleteCancel}
+              className="flex-1 text-xs py-2 bg-white/5 border border-white/10 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onDeleteConfirm}
+              disabled={deleting}
+              className="flex-1 text-xs py-2 bg-red-500/15 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-50"
+            >
+              {deleting ? 'Deleting…' : 'Yes, delete'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -117,6 +174,8 @@ function Dashboard() {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<SortOption>('recent')
   const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     getSpotlights()
@@ -124,6 +183,17 @@ function Dashboard() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  const handleDeleteConfirm = async (id: string) => {
+    setDeletingId(id)
+    try {
+      await deleteSpotlight(id)
+      setSpotlights((prev) => prev.filter((s) => s.id !== id))
+      setConfirmingId(null)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const filtered = useMemo(() => {
     let result = spotlights.filter(s =>
@@ -228,7 +298,17 @@ function Dashboard() {
         </div>
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((s) => <SpotlightCard key={s.id} spotlight={s} />)}
+          {filtered.map((s) => (
+            <SpotlightCard
+              key={s.id}
+              spotlight={s}
+              confirming={confirmingId === s.id}
+              deleting={deletingId === s.id}
+              onDeleteRequest={() => setConfirmingId(s.id)}
+              onDeleteConfirm={() => handleDeleteConfirm(s.id)}
+              onDeleteCancel={() => setConfirmingId(null)}
+            />
+          ))}
         </div>
       ) : (
         <div className="space-y-2">
@@ -236,9 +316,38 @@ function Dashboard() {
             const total = s.spotlight_albums?.length ?? 0
             const complete = s.spotlight_albums?.filter(a => a.status === 'complete').length ?? 0
             const listening = s.spotlight_albums?.some(a => a.status === 'listening')
+            const isConfirming = confirmingId === s.id
+            const isDeleting = deletingId === s.id
+
+            if (isConfirming) {
+              return (
+                <div key={s.id} className="flex items-center gap-3 p-3 bg-[#110e0b] border border-red-500/20 rounded-xl">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-white">Delete <span className="text-red-400">{s.artist_name}</span>?</p>
+                    <p className="text-xs text-zinc-400 mt-0.5">This cannot be undone.</p>
+                  </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => setConfirmingId(null)}
+                      className="text-xs px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-zinc-300 hover:text-white transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleDeleteConfirm(s.id)}
+                      disabled={isDeleting}
+                      className="text-xs px-3 py-1.5 bg-red-500/15 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/25 transition-colors disabled:opacity-50"
+                    >
+                      {isDeleting ? 'Deleting…' : 'Yes, delete'}
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+
             return (
-              <Link key={s.id} href={`/spotlight/${s.id}`}>
-                <div className="flex items-center gap-3 p-3 bg-[#110e0b] border border-white/5 rounded-xl hover:border-orange-500/20 transition-all group">
+              <div key={s.id} className="group flex items-center gap-3 p-3 bg-[#110e0b] border border-white/5 rounded-xl hover:border-orange-500/20 transition-all">
+                <Link href={`/spotlight/${s.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                   {s.artist_image_url && (
                     <Image src={s.artist_image_url} alt={s.artist_name} width={40} height={40} className="rounded-lg flex-shrink-0 object-cover" />
                   )}
@@ -253,8 +362,16 @@ function Dashboard() {
                       <div className="h-full bg-orange-500 rounded-full" style={{ width: `${total ? (complete / total) * 100 : 0}%` }} />
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+                {/* Step 1 — trash icon, visible on hover */}
+                <button
+                  onClick={() => setConfirmingId(s.id)}
+                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                  title="Delete spotlight"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
             )
           })}
         </div>
