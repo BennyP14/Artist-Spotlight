@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getFriendFeed, type ActivityEvent } from '@/lib/supabase'
 import { useAuth } from '@/context/auth'
+import PendingInvites from '@/components/PendingInvites'
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -147,6 +148,8 @@ export default function FeedPage() {
         <h1 className="text-2xl font-bold tracking-tight">Friend Feed</h1>
         <p className="text-zinc-400 text-xs uppercase tracking-widest mt-1">What your friends are listening to</p>
       </div>
+
+      <PendingInvites />
 
       {loading ? (
         <div className="space-y-3">

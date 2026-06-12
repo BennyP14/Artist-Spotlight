@@ -371,6 +371,174 @@ export async function addComment(spotlightId: string, content: string) {
   })
 }
 
+// ─── Closed Sessions ──────────────────────────────────────────────────────────
+
+export type ClosedSessionStatus = 'pending' | 'active' | 'inviter_complete' | 'invitee_complete' | 'revealed' | 'declined'
+
+export interface PendingInvite {
+  id: string
+  inviter_spotlight_id: string
+  inviter_id: string
+  status: string
+  invited_at: string
+  inviter_spotlight: { artist_name: string; artist_image_url: string | null } | null
+  inviter_profile: { id: string; username: string; display_name: string; avatar_url: string | null } | null
+}
+
+export interface ActiveSession {
+  id: string
+  inviter_spotlight_id: string
+  invitee_spotlight_id: string | null
+  inviter_id: string
+  invitee_id: string
+  status: ClosedSessionStatus
+  inviter_completed_at: string | null
+  invitee_completed_at: string | null
+  revealed_at: string | null
+  partner_profile: { username: string; display_name: string; avatar_url: string | null } | null
+  partner_spotlight_id: string | null
+  partner_progress: { total: number; complete: number } | null
+}
+
+export async function createClosedSession(spotlightId: string, inviteeId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  const { error } = await supabase.from('closed_sessions').insert({
+    inviter_spotlight_id: spotlightId,
+    inviter_id: user.id,
+    invitee_id: inviteeId,
+  })
+  if (error) throw error
+}
+
+export async function getPendingInvites(): Promise<PendingInvite[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+  const { data } = await supabase
+    .from('closed_sessions')
+    .select('id, inviter_spotlight_id, inviter_id, status, invited_at, inviter_spotlight:inviter_spotlight_id(artist_name, artist_image_url)')
+    .eq('invitee_id', user.id)
+    .eq('status', 'pending')
+    .order('invited_at', { ascending: false })
+  if (!data?.length) return []
+  const inviterIds = [...new Set(data.map((s) => s.inviter_id))]
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, username, display_name, avatar_url')
+    .in('id', inviterIds)
+  const profileMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p]))
+  return data.map((s) => ({
+    ...s,
+    inviter_spotlight: Array.isArray(s.inviter_spotlight) ? (s.inviter_spotlight[0] ?? null) : s.inviter_spotlight,
+    inviter_profile: profileMap[s.inviter_id] ?? null,
+  })) as PendingInvite[]
+}
+
+export async function getClosedSessionForSpotlight(spotlightId: string): Promise<ActiveSession | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase
+    .from('closed_sessions')
+    .select('id, inviter_spotlight_id, invitee_spotlight_id, inviter_id, invitee_id, status, inviter_completed_at, invitee_completed_at, revealed_at')
+    .or(`inviter_spotlight_id.eq.${spotlightId},invitee_spotlight_id.eq.${spotlightId}`)
+    .neq('status', 'declined')
+    .neq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+  const session = data?.[0]
+  if (!session) return null
+  const partnerId = session.inviter_id === user.id ? session.invitee_id : session.inviter_id
+  const partnerSpotlightId = session.inviter_id === user.id ? session.invitee_spotlight_id : session.inviter_spotlight_id
+  const [profileResult, albumsResult] = await Promise.all([
+    supabase.from('profiles').select('username, display_name, avatar_url').eq('id', partnerId).single(),
+    partnerSpotlightId
+      ? supabase.from('spotlight_albums').select('status').eq('spotlight_id', partnerSpotlightId)
+      : Promise.resolve({ data: null }),
+  ])
+  const partnerAlbums = albumsResult.data
+  return {
+    ...session,
+    status: session.status as ClosedSessionStatus,
+    partner_profile: profileResult.data ?? null,
+    partner_spotlight_id: partnerSpotlightId,
+    partner_progress: partnerAlbums
+      ? { total: partnerAlbums.length, complete: partnerAlbums.filter((a) => a.status === 'complete').length }
+      : null,
+  }
+}
+
+export async function acceptClosedSession(sessionId: string, inviterSpotlightId: string): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  const spotlight = await getSpotlight(inviterSpotlightId)
+  if (!spotlight) throw new Error('Spotlight not found')
+  const { data: newSpotlight, error: spotlightError } = await supabase
+    .from('spotlights')
+    .insert({
+      user_id: user.id,
+      artist_id: spotlight.artist_id,
+      artist_name: spotlight.artist_name,
+      artist_image_url: spotlight.artist_image_url,
+      artist_genres: spotlight.artist_genres,
+    })
+    .select()
+    .single()
+  if (spotlightError) throw spotlightError
+  await bulkInsertAlbums(
+    spotlight.spotlight_albums.map((a) => ({
+      spotlight_id: newSpotlight.id,
+      album_id: a.album_id,
+      album_name: a.album_name,
+      release_date: a.release_date,
+      release_year: a.release_year,
+      image_url: a.image_url,
+      total_tracks: a.total_tracks,
+      album_type: a.album_type,
+      spotify_url: a.spotify_url,
+      status: 'unlistened' as const,
+      rank_position: null,
+      global_rank_position: null,
+      auto_score: null,
+      notes: '',
+      verdict: '',
+      completed_at: null,
+    }))
+  )
+  const { error } = await supabase.from('closed_sessions').update({
+    invitee_spotlight_id: newSpotlight.id,
+    status: 'active',
+    accepted_at: new Date().toISOString(),
+  }).eq('id', sessionId)
+  if (error) throw error
+  return newSpotlight.id
+}
+
+export async function declineClosedSession(sessionId: string): Promise<void> {
+  const { error } = await supabase.from('closed_sessions').update({ status: 'declined' }).eq('id', sessionId)
+  if (error) throw error
+}
+
+export async function markSessionComplete(sessionId: string): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  const { data: session } = await supabase
+    .from('closed_sessions')
+    .select('inviter_id, inviter_completed_at, invitee_completed_at')
+    .eq('id', sessionId)
+    .single()
+  if (!session) throw new Error('Session not found')
+  const isInviter = session.inviter_id === user.id
+  const otherDone = isInviter ? !!session.invitee_completed_at : !!session.inviter_completed_at
+  const update: Record<string, unknown> = {
+    [isInviter ? 'inviter_completed_at' : 'invitee_completed_at']: new Date().toISOString(),
+    status: otherDone ? 'revealed' : (isInviter ? 'inviter_complete' : 'invitee_complete'),
+  }
+  if (otherDone) update.revealed_at = new Date().toISOString()
+  const { error } = await supabase.from('closed_sessions').update(update).eq('id', sessionId)
+  if (error) throw error
+  return otherDone
+}
+
 export async function getComparisonData(spotlightId1: string, spotlightId2: string) {
   const [s1, s2] = await Promise.all([getSpotlight(spotlightId1), getSpotlight(spotlightId2)])
   return { s1, s2 }

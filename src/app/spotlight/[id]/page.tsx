@@ -21,11 +21,14 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { getSpotlight, updateAlbumStatus, updateAlbumRanks, removeAlbumFromSpotlight, logActivity, updateSpotlightGenres, supabase } from '@/lib/supabase'
+import { getSpotlight, updateAlbumStatus, updateAlbumRanks, removeAlbumFromSpotlight, logActivity, updateSpotlightGenres, getClosedSessionForSpotlight, supabase, type ActiveSession } from '@/lib/supabase'
 import type { SpotlightWithAlbums, SpotlightAlbum } from '@/types'
 import { cn, statusColor, statusLabel, appleMusicSearchUrl, spotifySearchUrl } from '@/lib/utils'
+import { useAuth } from '@/context/auth'
 import Reactions from '@/components/Reactions'
 import Comments from '@/components/Comments'
+import ClosedSessionInvite from '@/components/ClosedSessionInvite'
+import ClosedSessionBanner from '@/components/ClosedSessionBanner'
 
 // ─── Sortable ranking item ────────────────────────────────────────────────────
 function SortableRankItem({
@@ -272,6 +275,7 @@ function AlbumRow({
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function SpotlightPage() {
   const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
   const [spotlight, setSpotlight] = useState<SpotlightWithAlbums | null>(null)
   const [albums, setAlbums] = useState<SpotlightAlbum[]>([])
   const [loading, setLoading] = useState(true)
@@ -281,6 +285,7 @@ export default function SpotlightPage() {
   const [editingGenres, setEditingGenres] = useState(false)
   const [genreInput, setGenreInput] = useState('')
   const [localGenres, setLocalGenres] = useState<string[]>([])
+  const [closedSession, setClosedSession] = useState<ActiveSession | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -300,6 +305,12 @@ export default function SpotlightPage() {
       })
       .finally(() => setLoading(false))
   }, [id])
+
+  const loadClosedSession = useCallback(() => {
+    getClosedSessionForSpotlight(id).then(setClosedSession)
+  }, [id])
+
+  useEffect(() => { loadClosedSession() }, [loadClosedSession])
 
   const handleGenreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -443,6 +454,7 @@ export default function SpotlightPage() {
     )
   }
 
+  const isOwner = !!user && user.id === spotlight.user_id
   const complete = albums.filter((a) => a.status === 'complete').length
   const listening = albums.filter((a) => a.status === 'listening').length
 
@@ -530,7 +542,10 @@ export default function SpotlightPage() {
           </div>
 
           {/* Bottom row: action buttons */}
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-wrap">
+            {isOwner && !closedSession && (
+              <ClosedSessionInvite spotlightId={id} artistName={spotlight.artist_name} />
+            )}
             <a
               href={`/api/og/${id}`}
               target="_blank"
@@ -598,6 +613,16 @@ export default function SpotlightPage() {
           </div>
         )}
       </div>
+
+      {/* Closed Session banner */}
+      {closedSession && (
+        <ClosedSessionBanner
+          session={closedSession}
+          myAlbumCount={albums.length}
+          myCompleteCount={complete}
+          onSessionUpdate={loadClosedSession}
+        />
+      )}
 
       {/* Reactions + Comments */}
       <div className="flex flex-col gap-3 mb-6 bg-[#110e0b] border border-white/5 rounded-2xl p-4">
