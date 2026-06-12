@@ -40,12 +40,12 @@ export default function ClosedSessionInvite({ spotlightId, artistName }: { spotl
     <>
       <button
         onClick={() => setOpen(true)}
-        className="text-xs bg-white/5 hover:bg-white/10 border border-white/8 text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+        className="text-xs bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 hover:border-orange-500/40 text-orange-400 hover:text-orange-300 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
-        Closed Session
+        Start a Closed Session
       </button>
 
       {open && (
@@ -60,10 +60,10 @@ export default function ClosedSessionInvite({ spotlightId, artistName }: { spotl
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-white font-semibold mb-1">Invite sent</p>
-                <p className="text-sm text-zinc-400 mb-6">Your friend will see it next time they open the app.</p>
+                <p className="text-white font-semibold mb-1">Challenge sent.</p>
+                <p className="text-sm text-zinc-400 mb-6">Ball&apos;s in their court. Start listening while you wait — no peeking at theirs.</p>
                 <button onClick={close} className="text-sm bg-white/8 hover:bg-white/12 text-white px-6 py-2.5 rounded-lg transition-colors">
-                  Done
+                  Let&apos;s go
                 </button>
               </div>
             ) : (
@@ -83,18 +83,19 @@ export default function ClosedSessionInvite({ spotlightId, artistName }: { spotl
                   </button>
                 </div>
 
-                {/* ── How it works ── */}
+                {/* ── Pitch ── */}
                 <div className="p-5 border-b border-white/5">
-                  <p className="text-xs text-zinc-500 uppercase tracking-widest mb-4">How it works</p>
-                  <div className="space-y-3.5">
+                  <p className="text-sm font-medium text-white mb-1">Think you&apos;ll agree on {artistName}?</p>
+                  <p className="text-sm text-zinc-400 mb-4">Challenge a friend to go through the discography independently. No comparing notes, no influencing each other — just honest, unfiltered takes. When you&apos;re both done, everything unlocks for the big reveal.</p>
+                  <div className="space-y-2.5">
                     {[
-                      { n: '1', text: `You and a friend each go through ${artistName}'s discography independently — no peeking` },
-                      { n: '2', text: 'All ratings, notes and verdicts are sealed from each other throughout' },
-                      { n: '3', text: 'Once you\'re both done, everything unlocks for a full side-by-side comparison' },
+                      { n: '1', text: `You each dive in on your own — no peeking at what the other thinks` },
+                      { n: '2', text: 'Your ratings, notes and verdicts stay locked away until the end' },
+                      { n: '3', text: 'Finish up, and the reveal drops — whose hot take was hotter?' },
                     ].map(({ n, text }) => (
                       <div key={n} className="flex gap-3">
                         <span className="w-5 h-5 rounded-full bg-orange-500/15 text-orange-400 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
-                        <p className="text-sm text-zinc-300 leading-snug">{text}</p>
+                        <p className="text-sm text-zinc-400 leading-snug">{text}</p>
                       </div>
                     ))}
                   </div>
@@ -102,9 +103,9 @@ export default function ClosedSessionInvite({ spotlightId, artistName }: { spotl
 
                 {/* ── Friend picker ── */}
                 <div className="p-5">
-                  <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">Invite a friend</p>
+                  <p className="text-xs text-zinc-500 uppercase tracking-widest mb-3">Who are you challenging?</p>
                   {friends.length === 0 ? (
-                    <p className="text-sm text-zinc-600 text-center py-6">No friends to invite yet — follow someone first.</p>
+                    <p className="text-sm text-zinc-600 text-center py-6">No one to challenge yet — follow someone first.</p>
                   ) : (
                     <div className="space-y-1.5 max-h-52 overflow-y-auto">
                       {friends.map((f) => (
@@ -145,7 +146,7 @@ export default function ClosedSessionInvite({ spotlightId, artistName }: { spotl
                     disabled={!selected || sending}
                     className="flex-1 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-400 py-2.5 rounded-xl transition-colors disabled:opacity-40"
                   >
-                    {sending ? 'Sending…' : 'Send Invite →'}
+                    {sending ? 'Sending…' : 'Challenge them →'}
                   </button>
                 </div>
               </>

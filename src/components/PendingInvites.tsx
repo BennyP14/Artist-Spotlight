@@ -60,26 +60,27 @@ export default function PendingInvites() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <div>
-                  <p className="text-xs text-orange-400 uppercase tracking-widest font-medium">Closed Session Invite</p>
-                  <p className="text-sm font-semibold text-white">{inviterName} · {artistName}</p>
+                  <p className="text-xs text-orange-400 uppercase tracking-widest font-medium">Closed Session</p>
+                  <p className="text-sm font-semibold text-white">{inviterName} wants to go head-to-head on {artistName}</p>
                 </div>
               </div>
             </div>
 
-            {/* What this means */}
-            <div className="px-4 py-3.5 space-y-2">
-              {[
-                `You'll get your own copy of this spotlight to work through at your own pace`,
-                `Your ratings, notes and verdicts are sealed from ${inviterName} — and theirs from you`,
-                'Once you\'re both done, everything unlocks for a full side-by-side comparison',
-              ].map((rule, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                  <svg className="w-3.5 h-3.5 text-orange-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <p className="text-xs text-zinc-400 leading-snug">{rule}</p>
-                </div>
-              ))}
+            {/* Pitch */}
+            <div className="px-4 py-4">
+              <p className="text-sm text-zinc-300 mb-3">You each listen independently and keep your opinions to yourself. When you&apos;re both done, the reveal drops — ratings, notes, verdicts, all of it side by side.</p>
+              <div className="space-y-1.5">
+                {[
+                  `No peeking at what ${inviterName} thinks until the very end`,
+                  'Your own copy of the spotlight — rate and review completely freely',
+                  'The bigger the disagreement, the better the conversation',
+                ].map((line, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-orange-500 text-xs mt-0.5 flex-shrink-0">—</span>
+                    <p className="text-xs text-zinc-500 leading-snug">{line}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Actions */}
@@ -87,9 +88,9 @@ export default function PendingInvites() {
               <button
                 onClick={() => decline(invite.id)}
                 disabled={!!acting}
-                className="flex-1 text-sm text-zinc-400 hover:text-white bg-white/5 hover:bg-white/8 py-2.5 rounded-xl transition-colors disabled:opacity-40"
+                className="flex-1 text-sm text-zinc-500 hover:text-white bg-white/5 hover:bg-white/8 py-2.5 rounded-xl transition-colors disabled:opacity-40"
               >
-                Decline
+                Not this time
               </button>
               <button
                 onClick={() => accept(invite)}
@@ -101,7 +102,7 @@ export default function PendingInvites() {
                     <div className="w-3.5 h-3.5 border border-white/40 border-t-white rounded-full animate-spin" />
                     Setting up…
                   </>
-                ) : 'Accept →'}
+                ) : "I'm in →"}
               </button>
             </div>
           </div>
