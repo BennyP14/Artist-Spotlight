@@ -539,6 +539,123 @@ export async function markSessionComplete(sessionId: string): Promise<boolean> {
   return otherDone
 }
 
+export interface RevealAlbum {
+  albumId: string
+  albumName: string
+  imageUrl: string | null
+  releaseYear: number
+  totalTracks: number
+  mine: { status: string; verdict: string; notes: string; rankPosition: number | null; trackRatings: Record<string, number> }
+  theirs: { status: string; verdict: string; notes: string; rankPosition: number | null; trackRatings: Record<string, number> }
+}
+
+export interface RevealData {
+  sessionId: string
+  artistName: string
+  artistImageUrl: string | null
+  myName: string
+  theirName: string
+  albums: RevealAlbum[]
+  syncScore: number
+  agreedTracks: { trackName: string; albumName: string; rating: number }[]
+  disputedTracks: { trackName: string; albumName: string; myRating: number; theirRating: number }[]
+}
+
+export async function getRevealData(sessionId: string): Promise<RevealData | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data: session } = await supabase
+    .from('closed_sessions')
+    .select('inviter_spotlight_id, invitee_spotlight_id, inviter_id, invitee_id, status')
+    .eq('id', sessionId)
+    .single()
+  if (!session || session.status !== 'revealed') return null
+
+  const mySpotlightId = session.inviter_id === user.id ? session.inviter_spotlight_id : session.invitee_spotlight_id
+  const theirSpotlightId = session.inviter_id === user.id ? session.invitee_spotlight_id : session.inviter_spotlight_id
+  const theirUserId = session.inviter_id === user.id ? session.invitee_id : session.inviter_id
+
+  if (!mySpotlightId || !theirSpotlightId) return null
+
+  const [mySpotlight, theirSpotlight, myProfile, theirProfile, myRatings, theirRatings] = await Promise.all([
+    getSpotlight(mySpotlightId),
+    getSpotlight(theirSpotlightId),
+    supabase.from('profiles').select('display_name, username').eq('id', user.id).single(),
+    supabase.from('profiles').select('display_name, username').eq('id', theirUserId).single(),
+    supabase.from('track_ratings').select('album_id, track_id, track_name, rating').eq('spotlight_id', mySpotlightId).eq('user_id', user.id),
+    supabase.from('track_ratings').select('album_id, track_id, track_name, rating').eq('spotlight_id', theirSpotlightId).eq('user_id', theirUserId),
+  ])
+
+  if (!mySpotlight || !theirSpotlight) return null
+
+  const myRatingsMap: Record<string, Record<string, { name: string; rating: number }>> = {}
+  for (const r of myRatings.data ?? []) {
+    if (!myRatingsMap[r.album_id]) myRatingsMap[r.album_id] = {}
+    myRatingsMap[r.album_id][r.track_id] = { name: r.track_name, rating: r.rating }
+  }
+  const theirRatingsMap: Record<string, Record<string, { name: string; rating: number }>> = {}
+  for (const r of theirRatings.data ?? []) {
+    if (!theirRatingsMap[r.album_id]) theirRatingsMap[r.album_id] = {}
+    theirRatingsMap[r.album_id][r.track_id] = { name: r.track_name, rating: r.rating }
+  }
+
+  const albums: RevealAlbum[] = mySpotlight.spotlight_albums.map((mine) => {
+    const theirs = theirSpotlight.spotlight_albums.find((a) => a.album_id === mine.album_id)
+    const myTrackRatings: Record<string, number> = {}
+    const theirTrackRatings: Record<string, number> = {}
+    for (const [tid, { rating }] of Object.entries(myRatingsMap[mine.album_id] ?? {})) myTrackRatings[tid] = rating
+    for (const [tid, { rating }] of Object.entries(theirRatingsMap[mine.album_id] ?? {})) theirTrackRatings[tid] = rating
+    return {
+      albumId: mine.album_id,
+      albumName: mine.album_name,
+      imageUrl: mine.image_url,
+      releaseYear: mine.release_year,
+      totalTracks: mine.total_tracks,
+      mine: { status: mine.status, verdict: mine.verdict, notes: mine.notes, rankPosition: mine.rank_position, trackRatings: myTrackRatings },
+      theirs: theirs
+        ? { status: theirs.status, verdict: theirs.verdict, notes: theirs.notes, rankPosition: theirs.rank_position, trackRatings: theirTrackRatings }
+        : { status: 'unlistened', verdict: '', notes: '', rankPosition: null, trackRatings: {} },
+    }
+  }).sort((a, b) => a.releaseYear - b.releaseYear)
+
+  // Compute sync stats across all rated tracks
+  const agreedTracks: RevealData['agreedTracks'] = []
+  const disputedTracks: RevealData['disputedTracks'] = []
+  let totalCompared = 0
+
+  for (const album of albums) {
+    const allTrackIds = new Set([...Object.keys(album.mine.trackRatings), ...Object.keys(album.theirs.trackRatings)])
+    for (const tid of allTrackIds) {
+      const my = album.mine.trackRatings[tid]
+      const their = album.theirs.trackRatings[tid]
+      if (!my || !their) continue
+      totalCompared++
+      const trackName = myRatingsMap[album.albumId]?.[tid]?.name ?? theirRatingsMap[album.albumId]?.[tid]?.name ?? tid
+      if (my === their) {
+        agreedTracks.push({ trackName, albumName: album.albumName, rating: my })
+      } else {
+        disputedTracks.push({ trackName, albumName: album.albumName, myRating: my, theirRating: their })
+      }
+    }
+  }
+
+  disputedTracks.sort((a, b) => Math.abs(b.myRating - b.theirRating) - Math.abs(a.myRating - a.theirRating))
+  const syncScore = totalCompared > 0 ? Math.round((agreedTracks.length / totalCompared) * 100) : 0
+
+  return {
+    sessionId,
+    artistName: mySpotlight.artist_name,
+    artistImageUrl: mySpotlight.artist_image_url,
+    myName: myProfile.data?.display_name || myProfile.data?.username || 'You',
+    theirName: theirProfile.data?.display_name || theirProfile.data?.username || 'Them',
+    albums,
+    syncScore,
+    agreedTracks,
+    disputedTracks,
+  }
+}
+
 export async function getComparisonData(spotlightId1: string, spotlightId2: string) {
   const [s1, s2] = await Promise.all([getSpotlight(spotlightId1), getSpotlight(spotlightId2)])
   return { s1, s2 }
