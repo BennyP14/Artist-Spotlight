@@ -124,7 +124,7 @@ export async function deleteSpotlight(id: string) {
 export async function getTrackRatings(
   spotlightId: string,
   albumId: string,
-  userId?: string // if provided, fetch that specific user's ratings (for viewing friends)
+  userId?: string
 ): Promise<Record<string, number>> {
   let query = supabase
     .from('track_ratings')
@@ -132,7 +132,11 @@ export async function getTrackRatings(
     .eq('spotlight_id', spotlightId)
     .eq('album_id', albumId)
   if (userId) query = query.eq('user_id', userId)
-  const { data } = await query
+  const { data, error } = await query
+  if (error) {
+    console.error('[getTrackRatings] failed — SQL migration may not have run yet', error)
+    return {}
+  }
   const map: Record<string, number> = {}
   for (const row of data ?? []) map[row.track_id] = row.rating
   return map
@@ -151,6 +155,22 @@ export async function upsertTrackRating(
     { user_id: user.id, spotlight_id: spotlightId, album_id: albumId, track_id: trackId, track_name: trackName, rating },
     { onConflict: 'user_id,spotlight_id,album_id,track_id' }
   )
+  if (error) throw error
+}
+
+export async function deleteTrackRating(
+  spotlightId: string,
+  albumId: string,
+  trackId: string
+) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const { error } = await supabase.from('track_ratings')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('spotlight_id', spotlightId)
+    .eq('album_id', albumId)
+    .eq('track_id', trackId)
   if (error) throw error
 }
 

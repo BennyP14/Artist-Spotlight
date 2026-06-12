@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getSpotlight, getAlbumInsights, updateAlbumStatus, updateAlbumNotes, updateAlbumVerdict, getTrackRatings, upsertTrackRating } from '@/lib/supabase'
+import { getSpotlight, getAlbumInsights, updateAlbumStatus, updateAlbumNotes, updateAlbumVerdict, getTrackRatings, upsertTrackRating, deleteTrackRating } from '@/lib/supabase'
 import type { SpotlightAlbum, AlbumInsights, SpotlightWithAlbums } from '@/types'
 import { cn, statusColor, statusLabel, appleMusicSearchUrl, spotifySearchUrl, formatDuration } from '@/lib/utils'
 import { useAuth } from '@/context/auth'
@@ -234,14 +234,26 @@ export default function AlbumPage() {
 
   const handleTrackRating = async (track: Track, rating: number) => {
     if (!isOwner) return
-    const newRating = trackRatings[String(track.trackId)] === rating ? 0 : rating
-    setTrackRatings((prev) => ({ ...prev, [String(track.trackId)]: newRating }))
-    if (newRating === 0) return
-    await upsertTrackRating(spotlightId, albumId, String(track.trackId), track.trackName, newRating)
-    // Auto-advance to "listening" the first time a track is rated
-    if (album?.status === 'unlistened') {
-      await updateAlbumStatus(album.id, 'listening')
-      setAlbum((prev) => prev ? { ...prev, status: 'listening' } : prev)
+    const trackKey = String(track.trackId)
+    const prevRating = trackRatings[trackKey] ?? 0
+    const newRating = prevRating === rating ? 0 : rating
+    // Optimistic update
+    setTrackRatings((prev) => ({ ...prev, [trackKey]: newRating }))
+    try {
+      if (newRating === 0) {
+        await deleteTrackRating(spotlightId, albumId, trackKey)
+      } else {
+        await upsertTrackRating(spotlightId, albumId, trackKey, track.trackName, newRating)
+        // Auto-advance to "listening" the first time a track is rated
+        if (album?.status === 'unlistened') {
+          await updateAlbumStatus(album.id, 'listening')
+          setAlbum((prev) => prev ? { ...prev, status: 'listening' } : prev)
+        }
+      }
+    } catch (err) {
+      // Revert optimistic update so the UI doesn't lie about what's saved
+      console.error('[handleTrackRating] save failed, reverting', err)
+      setTrackRatings((prev) => ({ ...prev, [trackKey]: prevRating }))
     }
   }
 
